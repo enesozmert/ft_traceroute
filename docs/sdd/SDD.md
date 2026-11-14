@@ -26,9 +26,9 @@
 
 ### 1.2 Out of scope for the mandatory part
 
-IPv6, reverse DNS of hops, and all of `-i -m -p -s -q -N -t -l`. These are bonus material, and
-the subject gates the bonus behind a perfect mandatory part, so they are implemented only
-after every mandatory gate is green.
+IPv6, reverse DNS of hops, and the option flags. These are bonus material, and the subject
+gates the bonus behind a perfect mandatory part, so they were implemented only after every
+mandatory gate was green — see §9.
 
 ---
 
@@ -199,6 +199,36 @@ No implementation file is written before a test for it fails. Test IDs:
 
 `test/cli.sh` and `test/format.sh` run from `make test`; the network-dependent cases run from
 `make test-net` inside the Docker container, where CAP_NET_RAW is available.
+
+---
+
+## 9. Bonus design (implemented after the mandatory gates were green)
+
+Five bonus items, which is the subject's maximum: `-m`, `-q`, `-p`, `-w` and `--resolve`.
+
+### 9.1 Option parsing
+
+`options_init` fills the mandatory defaults, `parse_option` then moves individual values.
+With no flag the program is byte-for-byte the mandatory program, which is what keeps R-04
+intact: an unrecognised `-` argument is still an error.
+
+Values are converted with `strtol` and the whole string must be consumed, so `-m 5x` is
+rejected rather than silently read as 5. Each flag carries its own range (`-m` 1–255,
+`-q` 1–`TR_MAX_PROBES`, `-p` 1–65535, `-w` 1–60), and `-q`'s ceiling is the size of the
+probe array, so a large `-q` cannot overrun it.
+
+### 9.2 Reverse DNS — why `--resolve` and not `-n`
+
+The real traceroute resolves by default and turns it off with `-n`. The subject forbids DNS
+resolution in the jump display, so the default here is the opposite: numeric always, and the
+lookup sits behind a flag that has to be asked for. `resolve_hops` returns immediately when
+the flag is absent, so `getnameinfo` is never reached on the mandatory path — T-703 guards
+that behaviourally rather than by grepping for the symbol.
+
+A failed lookup leaves `host_str` empty and `print_hop` falls back to the raw address, so an
+address with no PTR record degrades to the mandatory rendering instead of printing nothing.
+`NI_NAMEREQD` is passed so a lookup that would otherwise hand back the address as a string
+is reported as a failure.
 
 ---
 

@@ -12,9 +12,9 @@
 | R-01 | Executable adı `ft_traceroute` | `Makefile` → `output/ft_traceroute` |
 | R-02 | C dilinde yazılacak, Makefile teslim edilecek | `Makefile` |
 | R-03 | Makefile normal kuralları içerecek (`all` `clean` `fclean` `re`) | `Makefile` |
-| R-04 | Yönetilecek **tek** opsiyon: `--help` | `src/parse_args.c` |
+| R-04 | Yönetilecek **tek** opsiyon: `--help` | `src/parse_args.c`, `src/parse_option.c` |
 | R-05 | Tek IPv4 parametresi (adres **veya** hostname) | `src/parse_args.c`, `src/resolve_hostname.c` |
-| R-06 | FQDN yönetilecek, **hop gösteriminde DNS resolution yapılmayacak** | `src/print_hop.c` |
+| R-06 | FQDN yönetilecek, **hop gösteriminde DNS resolution yapılmayacak** | `src/print_hop.c`, `src/resolve_hops.c` |
 | R-07 | Hop başına ±30 ms sapma tolere edilir | `src/compute_elapsed_ms.c` |
 | R-08 | Socket'ler `O_NONBLOCK` moduna **alınmayacak** | `src/create_sockets.c`, `src/wait_reply.c` |
 | R-09 | Sadece libC kullanılacak (kendi libft + printf serbest) | `Makefile` link satırı |
@@ -32,8 +32,15 @@ the jump display."* Yani:
 
 - **Başlangıçta** forward resolution yapılır (hostname → IPv4), banner'da
   `hostname (IP)` yazılır.
-- **Hop satırlarında** `getnameinfo` / reverse DNS **çağrılmaz**; adres ham
-  IPv4 olarak basılır. Davranış `traceroute -n` ile aynıdır.
+- **Hop satırlarında** reverse DNS **çağrılmaz**; adres ham IPv4 olarak
+  basılır. Davranış `traceroute -n` ile aynıdır. Bonus `--resolve` bayrağı
+  bu davranışı yalnızca açıkça istendiğinde değiştirir (bkz. Bonus bölümü).
+
+### R-04 ve bonus flag'ler
+
+Bonus flag'ler (`-m` `-q` `-p` `-w` `--resolve`) mandatory davranışı
+değiştirmez: hiçbiri verilmediğinde program subject'in tarif ettiği
+varsayılanlarla çalışır. Tanınmayan her `-` argümanı hâlâ hata üretir.
 
 ### R-08 detayı
 
@@ -54,20 +61,24 @@ boş dönmeli.
 
 ---
 
-## Bonus (Chapter VI) — kilitli
+## Bonus (Chapter VI) — 5/5 tamamlandı
 
 Subject: bonus **yalnızca** mandatory part PERFECT ise değerlendirilir.
 Mandatory'de tek bir eksik varsa bonus hiç değerlendirilmez.
 
 | ID | Bonus | Durum |
 |----|-------|-------|
-| B-01 | DNS management (reverse lookup) | planlandı |
-| B-02 | `-i` flag | planlandı |
-| B-03 | `-m` flag (max hops) | planlandı |
-| B-04 | `-q` flag (probe sayısı) | planlandı |
-| B-05 | `-p` flag (base port) | planlandı |
+| B-01 | DNS management — `--resolve` ile opt-in reverse lookup | ✅ |
+| B-02 | `-m` flag (max hops, 1–255) | ✅ |
+| B-03 | `-q` flag (hop başına probe, 1–10) | ✅ |
+| B-04 | `-p` flag (base UDP port, 1–65535) | ✅ |
+| B-05 | `-w` flag (probe bekleme süresi, 1–60 s) | ✅ |
 
 Maksimum 5 bonus. `-V` bonus olarak sayılmaz (subject açık şekilde belirtiyor).
+
+**R-06 ile çakışma yok:** bonus reverse DNS varsayılan olarak **kapalıdır**.
+Bayraksız çalıştırmada hop satırları ham IPv4 basar, yani mandatory kural
+ihlal edilmez. `getnameinfo` yalnızca `--resolve` verildiğinde çağrılır.
 
 ---
 

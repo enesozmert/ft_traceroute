@@ -42,6 +42,7 @@ static void	run_hop(t_traceroute *tr, int ttl)
 		run_probe(tr, ttl, i);
 		i++;
 	}
+	resolve_hops(tr);
 	print_hop(tr, ttl);
 }
 

@@ -25,7 +25,7 @@
 - ✅ T-003 — Subject PDF okundu, mandatory/bonus maddeleri kurala çevrildi
 - ✅ T-004 — Probe protokolü subject'ten türetildi: UDP 33434+ (SDD §2)
 - ✅ T-005 — `docs/sdd/SDD.md` yazıldı (kodlamadan önce)
-- ✅ T-006 — Test matrisi tanımlandı (T-5xx / T-6xx / T-7xx)
+- ✅ T-006 — Test matrisi tanımlandı (T-5xx CLI / T-6xx protokol / T-7xx format / T-8xx bonus)
 
 ## Faz 1 — Build & altyapı
 
@@ -78,16 +78,17 @@
 
 - ✅ T-701 — Banner: `traceroute to HOST (IP), 30 hops max, 60 byte packets`
 - ✅ T-702 — Hop satırı: `%2d ` + ` <adres>` + `  %.3f ms`
-- ✅ T-703 — Hop gösteriminde reverse DNS yok (`getnameinfo` kaynakta geçmiyor)
+- ✅ T-703 — Hop gösteriminde reverse DNS yok (bayraksız çalıştırmada `getnameinfo` çağrılmaz)
 - ✅ T-704 — Rakam-normalize edilmiş layout gerçek `traceroute -n` ile **birebir aynı**
 
 ## Faz 6 — Kalite kapıları
 
-- ✅ T-801 — Norminette: 19/19 OK, 0 error
-- ✅ T-802 — Cppcheck: 0 bug (1 style: `variableScope`, norm nedeniyle deviation)
+- ✅ T-801 — Norminette: 22/22 OK, 0 error
+- ✅ T-802 — Cppcheck: 0 bug (2 style: `variableScope`, norm nedeniyle deviation)
 - ✅ T-803 — Strict build: 0 warning
-- ✅ T-804 — Valgrind: 5 path, 0 error, 0 leak (SIGINT'li canlı trace dahil)
-- ✅ T-805 — Yasak çağrı denetimi: `O_NONBLOCK` / `system` / `exec*` / `popen` / `getnameinfo` → hiçbiri yok
+- ✅ T-804 — Valgrind: 7 path, 0 error, 0 leak (SIGINT'li canlı trace dahil)
+- ✅ T-805 — Yasak çağrı denetimi: `O_NONBLOCK` / `system` / `exec*` / `popen` → hiçbiri yok
+             (`getnameinfo` yalnızca bonus `--resolve` yolunda; bayraksız çalışmada çağrılmaz, güvence T-703)
 - ✅ T-806 — Signal handler async-signal-safe (yalnızca `volatile sig_atomic_t` set eder)
 - ✅ T-807 — Tek exit noktası `main`; yardımcı fonksiyonlarda `exit()` yok
 
@@ -103,25 +104,45 @@
 
 - ✅ T-1001 — `git init` + ilk commit
 - ✅ T-1002 — `make fclean && make` temiz checkout'ta çalışıyor
+- ✅ T-1005 — Bonus commit'i, mandatory regresyonu yok (29/29 test)
 - ☐ T-1003 — Değerlendirme VM'inde (Linux kernel ≥ 4.0) son doğrulama
 - ☐ T-1004 — Çok hop'lu gerçek ağda doğrulama (Docker NAT dışında)
 
 ---
 
-## Faz 9 — Bonus (kilitli)
+## Faz 9 — Bonus (5/5)
 
 > Subject: bonus **yalnızca** mandatory PERFECT ise değerlendirilir.
 > Maksimum 5 bonus. `-V` bonus sayılmaz.
 
-- ☐ B-01 — DNS management (hop'lar için reverse lookup, `-n` ile kapatılabilir)
-- ☐ B-02 — `-m` flag (max hops)
-- ☐ B-03 — `-q` flag (hop başına probe sayısı)
-- ☐ B-04 — `-p` flag (base port)
-- ☐ B-05 — `-w` flag (probe timeout)
+- ✅ B-01 — DNS management: `--resolve` ile opt-in reverse lookup
+             (varsayılan numerik kalır — subject R-06 bunu zorunlu kılıyor)
+- ✅ B-02 — `-m <hops>` max hops (1–255)
+- ✅ B-03 — `-q <probes>` hop başına probe (1–10)
+- ✅ B-04 — `-p <port>` base UDP port (1–65535)
+- ✅ B-05 — `-w <seconds>` probe bekleme süresi (1–60)
 
-Bonus çalışması başlarken `checksum.c` (RFC 1071) geri eklenecek — ICMP probe
-modu için gerekir; mandatory UDP yolunda kullanılmadığı için ölü kod olarak
-bırakılmadı.
+### Bonus test kapsamı
+
+- ✅ T-801…T-807 — aralık dışı, eksik değer, sondaki çöp karakter (`-m 5x`) reddediliyor
+- ✅ T-808…T-812 — `--help` her bonus flag'i belgeliyor
+- ✅ T-820 — `-m 1` trace'i tek hop'ta kesiyor
+- ✅ T-821 — `-q 1` hop başına tek probe gönderiyor
+- ✅ T-822 — `-p 40000` eşleştirmeyi bozmuyor
+- ✅ T-823 — `-w 1` kabul ediliyor
+- ✅ T-824 — `--resolve` kabul ediliyor, hop satırı bozulmuyor
+- ✅ Pozitif DNS kanıtı: `--resolve 127.0.0.1` → `localhost (127.0.0.1)`
+
+### Bonus tasarım kararı — neden `--resolve`, neden `-n` değil
+
+Gerçek traceroute varsayılan olarak reverse DNS yapar ve `-n` ile kapatılır.
+Subject R-06 ise hop gösteriminde DNS resolution'ı **yasaklıyor**. Bu yüzden
+varsayılan davranış numerik bırakıldı ve DNS açıkça talep edilen bir bayrağın
+arkasına kondu. Böylece bayraksız çalıştırma mandatory kurala tam uyuyor,
+bonus ise ek bir yetenek olarak duruyor.
+
+`checksum.c` (RFC 1071) ICMP probe modu için gerekiyordu; o mod bonusa
+girmediği için ölü kod olarak bırakılmadı.
 
 ---
 
@@ -130,5 +151,5 @@ bırakılmadı.
 | ID | Konu | Etki |
 |----|------|------|
 | ⚠ T-1004 | Docker bridge hop 1'den sonrasını NAT'lıyor | Çok hop'lu yol yalnızca native Linux'ta görülebilir; format doğrulaması etkilenmez |
-| ⚠ — | ICMP code anotasyonları (`!H` `!N` `!X`) yok | Mandatory kapsamı dışında |
+| ⚠ — | ICMP code anotasyonları (`!H` `!N` `!X`) yok | Mandatory kapsamı dışında, bonus kotası dolu |
 | ⚠ — | IPv6 yok | Subject IPv4 zorunlu kılıyor |

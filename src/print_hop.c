@@ -15,9 +15,18 @@
 /*
 ** Layout taken from traceroute(8): "%2d " for the hop, " <addr>" the first
 ** time an address appears inside the hop, "  %.3f ms" per reply and " *"
-** per lost probe. The hop display never resolves an address back to a
-** hostname -- the subject forbids DNS resolution in the jump display.
+** per lost probe. The mandatory path prints the raw address -- the subject
+** forbids DNS resolution in the jump display -- and the bonus --resolve
+** flag switches it to the "name (addr)" form the reference uses.
 */
+
+static void	print_source(const t_probe *probe)
+{
+	if (probe->host_str[0] != '\0')
+		printf(" %s (%s)", probe->host_str, probe->from_str);
+	else
+		printf(" %s", probe->from_str);
+}
 
 static void	print_probe(const t_probe *probe, const char *last)
 {
@@ -27,7 +36,7 @@ static void	print_probe(const t_probe *probe, const char *last)
 		return ;
 	}
 	if (last == NULL || strcmp(last, probe->from_str) != 0)
-		printf(" %s", probe->from_str);
+		print_source(probe);
 	printf("  %.3f ms", probe->rtt);
 }
 

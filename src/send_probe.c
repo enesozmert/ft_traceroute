@@ -26,6 +26,7 @@ static void	reset_probe(t_probe *probe)
 	probe->rtt = 0.0;
 	probe->from_addr = 0;
 	probe->from_str[0] = '\0';
+	probe->host_str[0] = '\0';
 	gettimeofday(&probe->sent_at, NULL);
 }
 

@@ -12,21 +12,12 @@
 
 #include "header.h"
 
-static void	set_defaults(t_traceroute *tr)
+int	trace_init(t_traceroute *tr, const char *dest, const t_options *opt)
 {
 	memset(tr, 0, sizeof(*tr));
 	tr->send_fd = -1;
 	tr->recv_fd = -1;
-	tr->opt.max_hops = TR_MAX_HOPS;
-	tr->opt.nprobes = TR_NPROBES;
-	tr->opt.base_port = TR_BASE_PORT;
-	tr->opt.packet_len = TR_PACKET_LEN;
-	tr->opt.probe_timeout = TR_PROBE_TIMEOUT;
-}
-
-int	trace_init(t_traceroute *tr, const char *dest)
-{
-	set_defaults(tr);
+	tr->opt = *opt;
 	tr->dest_arg = dest;
 	tr->ident = (uint16_t)(getpid() & 0xFFFF);
 	if (resolve_hostname(dest, tr->dest_ip, sizeof(tr->dest_ip)) != 0)

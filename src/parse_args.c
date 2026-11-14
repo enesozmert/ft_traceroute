@@ -12,21 +12,28 @@
 
 #include "header.h"
 
-static int	is_option(const char *arg)
+static int	usage_error(void)
 {
-	return (arg[0] == '-' && arg[1] != '\0');
-}
-
-static int	reject(const char *reason, const char *arg)
-{
-	fprintf(stderr, "ft_traceroute: %s '%s'\n", reason, arg);
 	print_usage(stderr);
 	return (1);
 }
 
-int	parse_args(int argc, char *argv[], const char **dest)
+static int	take_dest(const char **dest, const char *arg)
+{
+	if (*dest != NULL)
+	{
+		fprintf(stderr, "ft_traceroute: extra operand '%s'\n", arg);
+		print_usage(stderr);
+		return (1);
+	}
+	*dest = arg;
+	return (0);
+}
+
+int	parse_args(int argc, char *argv[], const char **dest, t_options *opt)
 {
 	int	i;
+	int	used;
 
 	*dest = NULL;
 	i = 1;
@@ -37,17 +44,16 @@ int	parse_args(int argc, char *argv[], const char **dest)
 			print_usage(stdout);
 			return (0);
 		}
-		if (is_option(argv[i]))
-			return (reject("invalid option", argv[i]));
-		if (*dest != NULL)
-			return (reject("extra operand", argv[i]));
-		*dest = argv[i];
-		i++;
+		used = parse_option(argc, argv, i, opt);
+		if (used < 0)
+			return (1);
+		if (used == 0 && take_dest(dest, argv[i]) != 0)
+			return (1);
+		if (used == 0)
+			used = 1;
+		i += used;
 	}
 	if (*dest == NULL)
-	{
-		print_usage(stderr);
-		return (1);
-	}
+		return (usage_error());
 	return (0);
 }

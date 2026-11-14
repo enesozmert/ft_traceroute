@@ -3,8 +3,8 @@
 > Ecole 42 — Network Programming Project (Subject v5.0)
 > `traceroute` komutunun **C** dilinde sıfırdan yeniden yazılması.
 
-[![Norminette](https://img.shields.io/badge/norminette-19%2F19%20OK%20(0%20errors)-brightgreen)](docs/tasks/TASKS.md)
-[![Tests](https://img.shields.io/badge/tests-12%2F12%20passing-brightgreen)](test/run_tests.sh)
+[![Norminette](https://img.shields.io/badge/norminette-22%2F22%20OK%20(0%20errors)-brightgreen)](docs/tasks/TASKS.md)
+[![Tests](https://img.shields.io/badge/tests-29%2F29%20passing-brightgreen)](test/run_tests.sh)
 [![Valgrind](https://img.shields.io/badge/valgrind-0%20errors%20%2F%200%20leaks-brightgreen)](docs/tasks/TASKS.md)
 [![Strict](https://img.shields.io/badge/strict%20build-0%20warnings-brightgreen)](Makefile)
 
@@ -38,6 +38,9 @@ ft_traceroute, bir IP paketinin hedefe giderken izlediği yolu hop hop ortaya
 - Gerçek `traceroute` komutunu çağırmak **yasak**
 - Çıktı girintisi gerçek `traceroute` ile **birebir aynı**
 
+Bonus olarak `-m` `-q` `-p` `-w` flag'leri ve opt-in reverse DNS (`--resolve`)
+eklenmiştir — mandatory davranış bayraksız çalıştırmada değişmez.
+
 Subject dosyası: [`docs/main/en.subject.pdf`](docs/main/en.subject.pdf)
 
 ---
@@ -61,6 +64,11 @@ make
 sudo setcap cap_net_raw+ep output/ft_traceroute   # bir kez
 ./output/ft_traceroute google.com
 ./output/ft_traceroute --help
+
+# bonus flag'ler
+./output/ft_traceroute -m 15 -q 1 google.com      # 15 hop, hop başına 1 probe
+./output/ft_traceroute -p 40000 -w 2 8.8.8.8      # base port + bekleme süresi
+./output/ft_traceroute --resolve 8.8.8.8          # hop'larda reverse DNS
 ```
 
 Raw ICMP socket root veya `CAP_NET_RAW` ister; UDP gönderim socket'i istemez.
@@ -102,7 +110,7 @@ Protokol seçiminin subject'ten nasıl türetildiği: [`docs/sdd/SDD.md`](docs/s
 ### Norminette (Ecole 42)
 
 ```
-19/19 dosya OK
+22/22 dosya OK
 0 Error
 2 Notice (GLOBAL_VAR_DETECTED — g_interrupted, signal handler için zorunlu)
 ```
@@ -110,15 +118,16 @@ Protokol seçiminin subject'ten nasıl türetildiği: [`docs/sdd/SDD.md`](docs/s
 ### Test suite (`make test`)
 
 ```
-12 passed, 0 failed, 0 skipped
+29 passed, 0 failed, 0 skipped
 
-T-505 T-506 T-511 T-511b T-512 T-513 T-520 T-521   CLI kontratı
-T-701 banner layout     T-702 hop satırı layout
-T-703 hop'ta reverse DNS yok
-T-704 gerçek traceroute ile layout birebir aynı
+T-5xx  CLI kontratı (--help, argümansız, geçersiz opsiyon, iki hedef, bilinmeyen host)
+T-7xx  banner layout, hop satırı layout, reverse DNS yok,
+       gerçek traceroute ile layout birebir aynı
+T-8xx  bonus flag doğrulaması (aralık, eksik değer, sondaki çöp karakter, --help metni)
+T-82x  bonus flag'lerin canlı trace üzerindeki etkisi
 ```
 
-T-7xx case'leri root/`CAP_NET_RAW` ister; yetki yoksa SKIP olarak raporlanır.
+T-7xx ve T-82x case'leri root/`CAP_NET_RAW` ister; yetki yoksa SKIP raporlanır.
 
 ### Strict build
 
@@ -130,14 +139,15 @@ T-7xx case'leri root/`CAP_NET_RAW` ister; yetki yoksa SKIP olarak raporlanır.
 ### Valgrind
 
 ```
-5/5 path: 0 errors, 0 leaks
-(--help, bilinmeyen host, argümansız, geçersiz flag, canlı trace + SIGINT)
+7/7 path: 0 errors, 0 leaks
+(--help, bilinmeyen host, argümansız, -m 0, -m değersiz, -q 99,
+ canlı trace -m 2 --resolve + SIGINT)
 ```
 
 ### Cppcheck
 
 ```
-1 finding (style: variableScope) — norm blok içi değişken tanımını
+2 finding (style: variableScope) — norm blok içi değişken tanımını
 yasakladığı için belgelenmiş deviation. 0 bug / 0 leak / 0 nullPointer.
 ```
 
@@ -146,8 +156,10 @@ yasakladığı için belgelenmiş deviation. 0 bug / 0 leak / 0 nullPointer.
 ```
 grep -r O_NONBLOCK src/ hdr/              -> boş  (R-08)
 grep -rE 'system\(|execv|popen' src/      -> boş  (R-10)
-grep -r getnameinfo src/ hdr/             -> boş  (R-06)
 ```
+
+`getnameinfo` yalnızca bonus `--resolve` yolunda çağrılır; bayraksız
+çalıştırmada hiç çalışmaz. Davranışsal güvence testi T-703'tür.
 
 ---
 
@@ -159,9 +171,11 @@ ft_traceroute/
 ├── CMakeLists.txt           # Alternatif build (IDE)
 ├── README.md
 │
-├── src/                     # 18 .c dosyası — dosya başına bir public fonksiyon
+├── src/                     # 22 .c dosyası — dosya başına bir public fonksiyon
 │   ├── main.c               # argv -> init -> loop -> cleanup, tek exit noktası
+│   ├── options_init.c       # mandatory varsayılanları
 │   ├── parse_args.c         # --help, tek hedef, hata yolları
+│   ├── parse_option.c       # bonus flag tablosu + aralık doğrulama
 │   ├── print_usage.c
 │   ├── resolve_hostname.c   # getaddrinfo, AF_INET
 │   ├── trace_init.c         # t_traceroute yaşam döngüsü girişi
@@ -174,6 +188,7 @@ ft_traceroute/
 │   ├── wait_reply.c         # select(2), O_NONBLOCK yok
 │   ├── recv_reply.c         # recvfrom + ICMP sınıflandırma
 │   ├── match_probe.c        # iç IP+UDP başlığından port eşleştirme
+│   ├── resolve_hops.c       # bonus: opt-in reverse DNS
 │   ├── print_banner.c
 │   ├── print_hop.c          # traceroute(8) satır düzeni
 │   ├── compute_elapsed_ms.c # timeval yardımcıları
@@ -218,8 +233,8 @@ ft_traceroute/
 ## Sınırlar & Bilinen Sorunlar
 
 - **IPv6 desteği yok** — subject yalnızca IPv4 zorunlu kılar.
-- **Bonus flag'ler henüz yok** (`-i -m -p -q -N -t -l`, reverse DNS). Subject
-  bonusu mandatory PERFECT şartına bağladığı için önce mandatory kapatıldı.
+- **Bonus:** `-m` `-q` `-p` `-w` ve `--resolve` eklendi (5/5). `-i` `-s` `-t`
+  `-l` `-N` eklenmedi — subject en fazla 5 bonus sayıyor.
 - **Docker bridge ağı** hop 1'den sonrasını NAT arkasında gizler; çok hop'lu
   gerçek bir yol için native Linux veya host network gerekir. Çıktı düzeni
   doğrulaması bundan etkilenmez (T-704 üretilen hop sayısı kadar karşılaştırır).

@@ -49,6 +49,8 @@
 # define TR_MAX_HOPS 30
 /* Probes sent per hop (traceroute: -q, default 3). */
 # define TR_NPROBES 3
+/* Ceiling for -q, and therefore the size of the probe array. */
+# define TR_MAX_PROBES 10
 /* First UDP destination port (traceroute: -p, default 33434). */
 # define TR_BASE_PORT 33434
 /* Total wire size announced in the banner: IP(20) + UDP(8) + payload(32). */
@@ -129,15 +131,17 @@ typedef struct s_probe
 	double			rtt;
 	uint32_t		from_addr;
 	char			from_str[INET_ADDRSTRLEN];
+	char			host_str[NI_MAXHOST];
 }	t_probe;
 
 typedef struct s_options
 {
-	int			max_hops;
-	int			nprobes;
-	uint16_t	base_port;
-	int			packet_len;
-	int			probe_timeout;
+	int	max_hops;
+	int	nprobes;
+	int	base_port;
+	int	packet_len;
+	int	probe_timeout;
+	int	resolve_dns;
 }	t_options;
 
 typedef struct s_traceroute
@@ -148,7 +152,7 @@ typedef struct s_traceroute
 	char				dest_ip[INET_ADDRSTRLEN];
 	struct sockaddr_in	target;
 	t_options			opt;
-	t_probe				probes[TR_NPROBES];
+	t_probe				probes[TR_MAX_PROBES];
 	unsigned char		*payload;
 	int					payload_len;
 	uint16_t			ident;
@@ -164,13 +168,17 @@ extern volatile sig_atomic_t	g_interrupted;
 ** ---------------------------------------------------------------------------
 */
 
-int				parse_args(int argc, char *argv[], const char **dest);
+void			options_init(t_options *opt);
+int				parse_args(int argc, char *argv[], const char **dest,
+					t_options *opt);
+int				parse_option(int argc, char *argv[], int i, t_options *opt);
 void			print_usage(FILE *stream);
 
 int				resolve_hostname(const char *hostname, char *ip_str,
 					size_t ip_str_len);
 
-int				trace_init(t_traceroute *tr, const char *dest);
+int				trace_init(t_traceroute *tr, const char *dest,
+					const t_options *opt);
 void			trace_cleanup(t_traceroute *tr);
 int				create_sockets(t_traceroute *tr);
 int				create_payload(t_traceroute *tr);
@@ -184,6 +192,7 @@ int				recv_reply(t_traceroute *tr, int probe_idx, uint16_t port);
 int				match_probe(const t_traceroute *tr, const unsigned char *buf,
 					ssize_t len, uint16_t port);
 
+void			resolve_hops(t_traceroute *tr);
 void			print_banner(const t_traceroute *tr);
 void			print_hop(const t_traceroute *tr, int ttl);
 
