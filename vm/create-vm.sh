@@ -170,8 +170,13 @@ if ! "$VBM" showvminfo "$VM_NAME" >/dev/null 2>&1; then
 		--type dvddrive --medium "$VM_DIR/seed.iso"
 fi
 
-echo "==> starting headless"
-"$VBM" startvm "$VM_NAME" --type headless >/dev/null
+# Already running (re-run of this script, or started by hand) is not an error.
+if "$VBM" list runningvms | grep -q "\"$VM_NAME\""; then
+	echo "==> $VM_NAME is already running"
+else
+	echo "==> starting headless"
+	"$VBM" startvm "$VM_NAME" --type headless >/dev/null
+fi
 
 # ---------------------------------------------------------------------------
 # 5. wait for ssh

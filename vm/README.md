@@ -7,14 +7,57 @@ VM image'ının kendisi repoya konmadı: `disk.vdi` 1,3 GB ve GitHub'ın dosya
 başına sınırı 100 MB. Onun yerine burada **tarif** var — resmi Debian cloud
 image'ını indirip aynı makineyi üretir.
 
-## Kullanım
+## Yeni bir makinede sıfırdan
+
+Repo'da SSH anahtarı **yok** — script her makinede kendi anahtarını üretir.
+Tek yapman gereken:
 
 ```bash
-sh vm/create-vm.sh          # VM'i kur ve başlat (ilk sefer ~5 dk, image indirir)
-sh vm/run-tests.sh          # projeyi senkronla, VM'de test suite'i koş
-sh vm/run-tests.sh gates    # ek olarak norminette / strict / valgrind / diff-ref
-sh vm/create-vm.sh destroy  # VM'i ve diskini sil
+# 1. host araçları
+#    macOS:          brew install --cask virtualbox && brew install qemu
+#    Debian/Ubuntu:  sudo apt install virtualbox qemu-utils genisoimage
+#    Fedora:         sudo dnf install VirtualBox qemu-img xorriso
+
+# 2. VM'i kur ve başlat  (ilk sefer ~5-10 dk: ~400 MB image indirir,
+#    cloud-init paketleri kurar)
+sh vm/create-vm.sh
+
+# 3. script en sonda bağlantı bilgisini basar:
+#      ssh -i ~/vm/ft_traceroute/id_vm -p 2222 tester@127.0.0.1
+#    ve kopyalayıp ~/.ssh/config'e yapıştırabileceğin bir blok
+
+# 4. testleri VM'de koş
+sh vm/run-tests.sh          # test suite
+sh vm/run-tests.sh gates    # + norminette / strict / valgrind / diff-ref
+```
+
+Script tekrar çalıştırılabilir: VM kuruluysa yeniden kurmaz, kapalıysa
+başlatır, çalışıyorsa sadece bağlantı bilgisini basar.
+
+## Günlük kullanım
+
+```bash
+sh vm/create-vm.sh                        # başlat (veya bilgiyi yeniden bas)
 ssh -i ~/vm/ft_traceroute/id_vm -p 2222 tester@127.0.0.1
+VBoxManage controlvm ft-tr-vm poweroff    # durdur
+sh vm/create-vm.sh destroy                # VM'i ve diskini sil
+```
+
+İlk koşudan hemen sonra `vm/run-tests.sh` paket eksikliğinden patlarsa
+cloud-init hâlâ kuruyordur; bir kez bekle:
+
+```bash
+ssh -i ~/vm/ft_traceroute/id_vm -p 2222 tester@127.0.0.1 'sudo cloud-init status --wait'
+```
+
+## Ayarlar
+
+Hepsi ortam değişkeniyle değişir:
+
+```bash
+SSH_PORT=2345 MEMORY=8192 CPUS=8 DISK_MB=20480 sh vm/create-vm.sh
+ARCH=amd64 sh vm/create-vm.sh          # mimariyi zorla
+VM_NAME=ft-tr-2 sh vm/create-vm.sh     # ikinci bir VM
 ```
 
 ## Ne kuruluyor
