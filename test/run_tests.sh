@@ -10,6 +10,7 @@
 # =============================================================================
 
 BIN="${1:-./output/ft_traceroute}"
+SRCROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 PASS=0
 FAIL=0
 SKIP=0
@@ -64,6 +65,18 @@ stream_matches()
 	fi
 }
 
+# grep_absent <id> <desc> <regex> -- the pattern must not appear in the sources
+grep_absent()
+{
+	id="$1"; desc="$2"; re="$3"
+	hit=$(grep -rEl "$re" "$SRCROOT/src" "$SRCROOT/hdr" 2>/dev/null | tr '\n' ' ')
+	if [ -z "$hit" ]; then
+		report "$id" "$desc" pass
+	else
+		report "$id" "$desc" fail "found in: $hit"
+	fi
+}
+
 if [ ! -x "$BIN" ]; then
 	printf 'test harness: binary not found or not executable: %s\n' "$BIN" >&2
 	printf 'build it first: make\n' >&2
@@ -71,6 +84,67 @@ if [ ! -x "$BIN" ]; then
 fi
 
 printf '==> ft_traceroute test suite (%s)\n\n' "$BIN"
+
+# ---------------------------------------------------------------------------
+# T-1xx — deliverable shape (subject Chapter V: executable name, Makefile)
+# ---------------------------------------------------------------------------
+printf -- '--- T-1xx deliverable shape\n'
+
+if [ "$(basename "$BIN")" = "ft_traceroute" ]; then
+	report T-101 "executable is named ft_traceroute" pass
+else
+	report T-101 "executable is named ft_traceroute" fail "got $(basename "$BIN")"
+fi
+
+n=2
+for rule in all clean fclean re; do
+	if grep -qE "^$rule:" "$SRCROOT/Makefile"; then
+		report "T-10$n" "Makefile has the '$rule' rule" pass
+	else
+		report "T-10$n" "Makefile has the '$rule' rule" fail "rule missing"
+	fi
+	n=$((n + 1))
+done
+
+# fclean must actually remove the binary, and re must bring it back.
+if (cd "$SRCROOT" && make fclean >/dev/null 2>&1) && [ ! -e "$SRCROOT/output/ft_traceroute" ]; then
+	report T-110 "fclean removes the executable" pass
+else
+	report T-110 "fclean removes the executable" fail "binary still present after fclean"
+fi
+if (cd "$SRCROOT" && make re >/dev/null 2>&1) && [ -x "$SRCROOT/output/ft_traceroute" ]; then
+	report T-111 "re rebuilds the executable" pass
+else
+	report T-111 "re rebuilds the executable" fail "binary missing after re"
+fi
+
+# ---------------------------------------------------------------------------
+# T-2xx — source-level subject rules that no runtime test can observe
+# ---------------------------------------------------------------------------
+printf -- '\n--- T-2xx source-level rules\n'
+
+grep_absent T-201 "sockets are never set O_NONBLOCK (R-08)" 'O_NONBLOCK'
+grep_absent T-202 "the real traceroute is never invoked (R-10)" 'system[[:space:]]*\(|execv|execl|popen'
+grep_absent T-203 "no fcntl socket-mode juggling" 'fcntl[[:space:]]*\('
+
+# libC only (R-09). -lm is the standard math library and is part of libc.
+if command -v ldd >/dev/null 2>&1; then
+	extra=$(ldd "$BIN" 2>/dev/null \
+		| grep -vE 'linux-vdso|ld-linux|libc\.so|libm\.so|statically linked|not a dynamic' \
+		| grep '=>' || true)
+elif command -v otool >/dev/null 2>&1; then
+	extra=$(otool -L "$BIN" 2>/dev/null | tail -n +2 \
+		| grep -vE 'libSystem\.B\.dylib|libc\+\+|libm\.' || true)
+else
+	extra="__unavailable__"
+fi
+if [ "$extra" = "__unavailable__" ]; then
+	report T-204 "links against libC only (R-09)" skip "no ldd or otool"
+elif [ -z "$extra" ]; then
+	report T-204 "links against libC only (R-09)" pass
+else
+	report T-204 "links against libC only (R-09)" fail "$(printf '%s' "$extra" | tr '\n' ' ')"
+fi
 
 # ---------------------------------------------------------------------------
 # T-5xx — CLI contract (subject: the only option is --help)
@@ -85,6 +159,26 @@ exit_code_is   T-512 "unknown option exits non-zero"     nonzero --bogus 8.8.8.8
 exit_code_is   T-513 "two destinations exit non-zero"    nonzero 8.8.8.8 1.1.1.1
 exit_code_is   T-520 "unknown host exits non-zero"       nonzero nonexistent.invalid.tld
 stream_matches T-521 "unknown host message on stderr"    err "ft_traceroute: " nonexistent.invalid.tld
+
+# R-05: the single parameter is an IPv4 address OR a hostname. Both forms must
+# be accepted; resolution happens before any socket is opened, so no privilege
+# is needed to see the banner fail or succeed.
+if "$BIN" 8.8.8.8 2>&1 | head -1 | grep -qE '^(traceroute to 8\.8\.8\.8 \(8\.8\.8\.8\)|ft_traceroute: icmp socket)'; then
+	report T-530 "IPv4 literal is accepted and echoed verbatim" pass
+else
+	report T-530 "IPv4 literal is accepted and echoed verbatim" fail "$("$BIN" 8.8.8.8 2>&1 | head -1)"
+fi
+
+# R-05/R-06: an FQDN is resolved once, and the banner shows the name the user
+# typed next to the resolved address -- it is not replaced by the address.
+out=$("$BIN" dns.google 2>&1 | head -1)
+if printf '%s' "$out" | grep -qE '^traceroute to dns\.google \(([0-9]{1,3}\.){3}[0-9]{1,3}\)'; then
+	report T-531 "FQDN accepted, banner keeps the typed name" pass
+elif printf '%s' "$out" | grep -q 'icmp socket'; then
+	report T-531 "FQDN accepted, banner keeps the typed name" skip "needs root or CAP_NET_RAW"
+else
+	report T-531 "FQDN accepted, banner keeps the typed name" fail "$out"
+fi
 
 # ---------------------------------------------------------------------------
 # T-8xx — bonus options. Argument validation happens before any socket is
@@ -121,7 +215,8 @@ can_raw()
 }
 
 if ! can_raw; then
-	for id in T-701 T-702 T-703 T-704 T-820 T-821 T-822 T-823 T-824; do
+	for id in T-701 T-702 T-703 T-704 T-705 T-706 T-707 T-708 T-709 \
+		T-820 T-821 T-822 T-823 T-824; do
 		report "$id" "output format vs real traceroute" skip "needs root or CAP_NET_RAW"
 	done
 else
@@ -147,22 +242,86 @@ else
 	fi
 
 	if command -v traceroute >/dev/null 2>&1; then
-		# Normalise every digit to N so the naturally different RTT values and
-		# hop addresses drop out and only the layout is compared.
-		sed -E 's/[0-9]+/N/g' "$TRACE_LOG" > /tmp/ft_tr_our_layout.txt
-		lines=$(wc -l < /tmp/ft_tr_our_layout.txt)
-		traceroute -n -m "$lines" "$HOST" 2>&1 \
+		# Byte-for-byte layout comparison, run against the loopback. A remote
+		# trace cannot be compared this way: the two runs are independent, so a
+		# single probe lost in one of them is an ordinary network event that
+		# would fail the diff while saying nothing about the layout. The
+		# loopback answers every probe, so any difference here is real.
+		timeout -s INT 15s "$BIN" 127.0.0.1 2>&1 \
+			| sed -E 's/[0-9]+/N/g' > /tmp/ft_tr_our_layout.txt
+		traceroute -n 127.0.0.1 2>&1 \
 			| sed -E 's/[0-9]+/N/g' > /tmp/ft_tr_ref_layout.txt
-		# Our run may be cut short by the harness timeout, so compare only the
-		# hops we actually produced.
-		head -n "$lines" /tmp/ft_tr_ref_layout.txt > /tmp/ft_tr_ref_cut.txt
-		if diff -q /tmp/ft_tr_ref_cut.txt /tmp/ft_tr_our_layout.txt >/dev/null 2>&1; then
+		if diff -q /tmp/ft_tr_ref_layout.txt /tmp/ft_tr_our_layout.txt >/dev/null 2>&1; then
 			report T-704 "layout identical to real traceroute" pass
 		else
-			report T-704 "layout identical to real traceroute" fail "see: diff /tmp/ft_tr_ref_cut.txt /tmp/ft_tr_our_layout.txt"
+			report T-704 "layout identical to real traceroute" fail "see: diff /tmp/ft_tr_ref_layout.txt /tmp/ft_tr_our_layout.txt"
+		fi
+
+		# The remote trace is checked against the reference grammar instead,
+		# which tolerates a differing number of answered probes.
+		# A hop line is the hop number followed by one field per probe: " *"
+		# for a lost probe, or an optional " <addr>" plus "  <rtt> ms" for an
+		# answered one. The address appears only when it differs from the
+		# previous probe's, so a lost first probe legitimately produces
+		# " 1  * 10.0.0.1  0.250 ms  0.030 ms".
+		bad=$(grep -E '^[ ]*[0-9]+ ' "$TRACE_LOG" \
+			| grep -vE '^[ ]*[0-9]+ ( \*|( ([0-9]{1,3}\.){3}[0-9]{1,3})?  [0-9]+\.[0-9]{3} ms)+$' \
+			| head -1)
+		if [ -z "$bad" ]; then
+			report T-709 "every remote hop line follows the reference grammar" pass
+		else
+			report T-709 "every remote hop line follows the reference grammar" fail "$bad"
 		fi
 	else
 		report T-704 "layout identical to real traceroute" skip "system traceroute not installed"
+		report T-709 "every remote hop line follows the reference grammar" skip "system traceroute not installed"
+	fi
+
+	# --- T-70x: further mandatory output rules -----------------------------
+
+	# Hop numbers start at 1 and increase by exactly one.
+	if [ "$(grep -oE '^[ ]*[0-9]+ ' "$TRACE_LOG" | tr -d ' ' | tr '\n' ' ')" \
+		= "$(seq 1 "$(grep -cE '^[ ]*[0-9]+ ' "$TRACE_LOG")" | tr '\n' ' ')" ]; then
+		report T-705 "hop numbers run 1..n with no gaps" pass
+	else
+		report T-705 "hop numbers run 1..n with no gaps" fail "$(grep -oE '^[ ]*[0-9]+ ' "$TRACE_LOG" | tr -d ' ' | tr '\n' ' ')"
+	fi
+
+	# Reaching the destination must stop the trace: the loopback answers on the
+	# first hop, so exactly one hop line may be printed.
+	timeout -s INT 15s "$BIN" 127.0.0.1 > /tmp/ft_tr_local.log 2>&1
+	if [ "$(grep -cE '^[ ]*[0-9]+ ' /tmp/ft_tr_local.log)" -eq 1 ]; then
+		report T-706 "the trace stops once the destination answers" pass
+	else
+		report T-706 "the trace stops once the destination answers" fail "$(grep -cE '^[ ]*[0-9]+ ' /tmp/ft_tr_local.log) hop lines"
+	fi
+
+	# R-11: no unexpected exit. SIGINT must end the run through the normal path,
+	# never with a signal status (128+N) such as 139 (SEGV) or 134 (ABRT).
+	timeout -s INT 6s "$BIN" 8.8.8.8 >/dev/null 2>&1
+	rc=$?
+	if [ "$rc" -lt 128 ] || [ "$rc" -eq 130 ]; then
+		report T-707 "SIGINT exits cleanly, never on a fatal signal" pass
+	else
+		report T-707 "SIGINT exits cleanly, never on a fatal signal" fail "exit status $rc"
+	fi
+
+	# R-07: a hop RTT must land within 30 ms of what the reference measures for
+	# the same hop. Compared on hop 1, which both tools always reach.
+	if command -v traceroute >/dev/null 2>&1; then
+		ours=$(sed -n '2p' "$TRACE_LOG" | grep -oE '[0-9]+\.[0-9]{3} ms' | head -1 | cut -d. -f1)
+		theirs=$(traceroute -n -m 1 "$HOST" 2>/dev/null | sed -n '2p' \
+			| grep -oE '[0-9]+\.[0-9]{3} ms' | head -1 | cut -d. -f1)
+		if [ -n "$ours" ] && [ -n "$theirs" ] \
+			&& [ "$(( ours - theirs ))" -le 30 ] && [ "$(( theirs - ours ))" -le 30 ]; then
+			report T-708 "hop RTT within the 30 ms tolerance (R-07)" pass
+		elif [ -z "$ours" ] || [ -z "$theirs" ]; then
+			report T-708 "hop RTT within the 30 ms tolerance (R-07)" skip "hop 1 did not answer"
+		else
+			report T-708 "hop RTT within the 30 ms tolerance (R-07)" fail "ours=${ours}ms reference=${theirs}ms"
+		fi
+	else
+		report T-708 "hop RTT within the 30 ms tolerance (R-07)" skip "system traceroute not installed"
 	fi
 
 	# --- T-82x: bonus options against a live trace -------------------------
