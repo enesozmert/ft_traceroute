@@ -77,10 +77,22 @@ Elle vermek için: `VM_DIR=/başka/yol sh vm/create-vm.sh`
 curl: (60) SSL certificate ... unable to get local issuer certificate
 ```
 
-Image'da sorun yok — host'ta kullanılabilir bir CA bundle yok. Script bunu
-kendisi çözmeye çalışır: bilinen trust store yollarını, `CURL_CA_BUNDLE` /
-`SSL_CERT_FILE` değişkenlerini ve Python `certifi`'yi sırayla dener, olmazsa
-`wget`'e düşer. Yine de olmazsa:
+Image'da sorun yok — host'ta kullanılabilir bir CA bundle yok. Script sırayla
+dener:
+
+1. Bulunan CA bundle ile `curl` (`CURL_CA_BUNDLE`, `SSL_CERT_FILE`, bilinen
+   trust store yolları, Python `certifi`)
+2. `curl`'ün kendi varsayılanları
+3. `wget` — ayrı CA yapılandırması taşır, curl'ün patladığı yerde çoğu zaman çalışır
+4. **Düz HTTP + SHA512 doğrulaması** — mirror'ın yanında yayınladığı
+   `SHA512SUMS` ile indirilen dosya denetlenir
+
+4. adım, TLS'i hiç kullanamayan makineler için kaçış yolu. TLS'ten zayıf
+(image'ı değiştirebilen checksum'ı da değiştirebilir) ama bozuk/yarım indirmeyi
+yakalar — `curl -k`'nın yapmadığı şey. Script **hiçbir adımda doğrulamayı
+kapatmıyor**.
+
+Hepsi başarısız olursa:
 
 ```bash
 # 1. trust store'u kur

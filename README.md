@@ -179,8 +179,9 @@ Elle vermek için `VM_DIR=/başka/yol sh vm/create-vm.sh`.
 
 **TLS hatası** (`curl: (60) ... unable to get local issuer certificate`) 42
 makinelerinde sık görülür: host'ta kullanılabilir CA bundle yoktur. Script
-bilinen trust store yollarını, `CURL_CA_BUNDLE` / `SSL_CERT_FILE` değişkenlerini
-ve Python `certifi`'yi dener, olmazsa `wget`'e düşer. Yine de olmazsa
+sırayla dener — bulunan CA bundle ile `curl`, curl'ün varsayılanları, `wget`,
+son olarak **düz HTTP + mirror'ın `SHA512SUMS`'ına karşı doğrulama**. Hiçbir
+adımda TLS doğrulaması kapatılmıyor. Hepsi başarısız olursa
 `sudo apt install ca-certificates && sudo update-ca-certificates`, ya da
 `CURL_CA_BUNDLE=/path/to/bundle.crt sh vm/create-vm.sh`. Script doğrulamayı
 kendi kendine kapatmaz.
