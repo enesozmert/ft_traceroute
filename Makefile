@@ -44,10 +44,9 @@ all: $(NAME)
 $(NAME): $(OBJS)
 	@mkdir -p $(OUTDIR)
 	$(CC) $(CFLAGS) -o $(NAME) $(OBJS) -lm
-	@# Try to apply CAP_NET_RAW automatically (non-fatal if unavailable)
-	@if command -v setcap >/dev/null 2>&1; then \
-		setcap cap_net_raw+ep $(NAME) >/dev/null 2>&1 || true; \
-	fi
+	@# CAP_NET_RAW is NOT applied here on purpose: valgrind refuses to run a
+	@# file with capabilities set, so an automatic setcap would silently break
+	@# `make valgrind`. Grant it explicitly with `make setcap` when wanted.
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 	$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@
@@ -188,6 +187,11 @@ VALGRIND_FLAGS = --leak-check=full --show-leak-kinds=all --track-origins=yes \
 
 valgrind: $(NAME)
 	@command -v valgrind >/dev/null 2>&1 || { echo "valgrind not found"; exit 1; }
+	@# Drop any capability a previous `make setcap` left behind, otherwise
+	@# valgrind refuses the binary with "Can't execute setuid/setgid/setcap".
+	@if command -v setcap >/dev/null 2>&1; then \
+		setcap -r $(NAME) >/dev/null 2>&1 || true; \
+	fi
 	@echo "==> valgrind: argument-error paths (no privileges needed)"
 	valgrind $(VALGRIND_FLAGS) $(NAME) --help
 	valgrind $(VALGRIND_FLAGS) $(NAME) nonexistent.invalid.tld || true

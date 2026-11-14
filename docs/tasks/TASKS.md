@@ -108,10 +108,15 @@
 - ✅ T-1006 — `make cmake-build` doğrulandı (CMake ile de derleniyor)
 - ✅ T-1007 — `make asan` doğrulandı (AddressSanitizer altında canlı trace temiz)
 - ✅ T-1008 — `make diff-ref` doğrulandı → `layout identical`
+- ✅ T-1009 — Makefile'ın `all` içindeki otomatik `setcap`'i kaldırıldı:
+             capability'li binary valgrind'i sessizce kırıyordu (VM raporu §4)
              (referans koşu `traceroute -n` ile yapılır; subject hop'ta DNS'i yasakladığı
              için karşılaştırılabilir referans numerik olandır)
-- ☐ T-1003 — Değerlendirme VM'inde (Linux kernel ≥ 4.0) son doğrulama
-- ☐ T-1004 — Çok hop'lu gerçek ağda doğrulama (Docker NAT dışında)
+- ✅ T-1003 — Linux VM'de doğrulandı: VirtualBox headless, Debian 13 arm64,
+             kernel 6.12.116, 47/47 test — [`docs/report/vm-test-report.md`](../report/vm-test-report.md)
+- ⚠ T-1004 — Çok hop'lu gerçek ağ: NAT (hem Docker hem VirtualBox) upstream ICMP
+             Time Exceeded'ı yutuyor; referans `traceroute` de aynı çıktıyı veriyor.
+             Bridged ağı olan makinede veya okul VM'inde kapatılacak.
 
 ---
 
