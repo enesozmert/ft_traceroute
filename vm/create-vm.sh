@@ -91,9 +91,21 @@ if [ ! -f "debian-13-$ARCH.qcow2" ]; then
 fi
 
 if [ ! -f disk.vdi ]; then
+	# Grow first, convert second. The cloud image is 3 GB, which the toolchain
+	# does not fit into. qemu-img cannot resize a VDI -- "Image format driver
+	# does not support resize" -- and VBoxManage modifymedium needs the file in
+	# VirtualBox's media registry, failing with "Failed to create medium lock
+	# list" when it is not. Resizing the qcow2 avoids both: the converted VDI
+	# is dynamic, so it still only takes the space actually used, and
+	# cloud-init grows the partition and filesystem on first boot.
+	echo "==> resizing the image to ${DISK_MB} MB"
+	qemu-img resize "debian-13-$ARCH.qcow2" "${DISK_MB}M" >/dev/null 2>&1 \
+		|| echo "    (already that size or larger)"
+
 	echo "==> converting to VDI"
 	qemu-img convert -f qcow2 -O vdi "debian-13-$ARCH.qcow2" disk.vdi
-	"$VBM" modifymedium disk disk.vdi --resize "$DISK_MB"
+
+	echo "    $(qemu-img info disk.vdi | grep 'virtual size')"
 fi
 
 # ---------------------------------------------------------------------------
@@ -177,8 +189,13 @@ if ! "$VBM" showvminfo "$VM_NAME" >/dev/null 2>&1; then
 		"$VBM" modifyvm "$VM_NAME" --natpf1 "ssh,tcp,127.0.0.1,$SSH_PORT,,22"
 	fi
 
+	# vmsvga is explicit on purpose: the default graphics device fails to
+	# construct on an ARM guest with
+	#   Failed to construct device 'vga' instance #0 (VERR_PGM_RAM_CONFLICT)
+	# even though nothing ever looks at the console.
 	"$VBM" modifyvm "$VM_NAME" --memory "$MEMORY" --cpus "$CPUS" \
-		--firmware efi --nictype1 virtio --audio-driver none --usb off
+		--firmware efi --nictype1 virtio --audio-driver none --usb off \
+		--graphicscontroller vmsvga --vram 16
 
 	"$VBM" storagectl "$VM_NAME" --name virtio --add virtio --bootable on
 	"$VBM" storageattach "$VM_NAME" --storagectl virtio --port 0 \

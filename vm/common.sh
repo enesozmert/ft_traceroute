@@ -103,13 +103,13 @@ vm_download()
 
 	if [ -n "$_ca" ]; then
 		echo "    (CA bundle: $_ca)"
-		if curl -fL --retry 3 --cacert "$_ca" -o "$_out" "$_url"; then
+		if curl -fL --retry 3 --progress-bar --cacert "$_ca" -o "$_out" "$_url"; then
 			return 0
 		fi
 		echo "    that bundle did not satisfy curl, trying its defaults"
 	fi
 
-	if curl -fL --retry 3 -o "$_out" "$_url"; then
+	if curl -fL --retry 3 --progress-bar -o "$_out" "$_url"; then
 		return 0
 	fi
 
@@ -143,7 +143,7 @@ vm_download()
 	if [ -z "$_want" ]; then
 		echo "    could not fetch the checksum list either" >&2
 	else
-		if curl -fL --retry 3 -o "$_out" "$_http" \
+		if curl -fL --retry 3 --progress-bar -o "$_out" "$_http" \
 			|| wget -O "$_out" "$_http"; then
 			echo "    verifying SHA512..."
 			if vm_verify_sha512 "$_out" "$_want"; then
