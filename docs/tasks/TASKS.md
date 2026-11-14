@@ -105,6 +105,11 @@
 - ✅ T-1001 — `git init` + ilk commit
 - ✅ T-1002 — `make fclean && make` temiz checkout'ta çalışıyor
 - ✅ T-1005 — Bonus commit'i, mandatory regresyonu yok (29/29 test)
+- ✅ T-1006 — `make cmake-build` doğrulandı (CMake ile de derleniyor)
+- ✅ T-1007 — `make asan` doğrulandı (AddressSanitizer altında canlı trace temiz)
+- ✅ T-1008 — `make diff-ref` doğrulandı → `layout identical`
+             (referans koşu `traceroute -n` ile yapılır; subject hop'ta DNS'i yasakladığı
+             için karşılaştırılabilir referans numerik olandır)
 - ☐ T-1003 — Değerlendirme VM'inde (Linux kernel ≥ 4.0) son doğrulama
 - ☐ T-1004 — Çok hop'lu gerçek ağda doğrulama (Docker NAT dışında)
 

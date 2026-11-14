@@ -221,7 +221,9 @@ DIFF_HOST ?= 8.8.8.8
 diff-ref: $(NAME)
 	@command -v traceroute >/dev/null 2>&1 || { echo "system traceroute not found"; exit 1; }
 	@echo "==> Comparing ft_traceroute vs system traceroute ($(DIFF_HOST))"
-	@traceroute $(DIFF_HOST) > /tmp/ref-traceroute.txt 2>&1 || true
+	@# -n on the reference: the subject forbids DNS resolution in the hop
+	@# display, so the comparable reference run is the numeric one.
+	@traceroute -n $(DIFF_HOST) > /tmp/ref-traceroute.txt 2>&1 || true
 	@$(NAME) $(DIFF_HOST) > /tmp/our-traceroute.txt 2>&1 || true
 	@echo "--- line-by-line diff (RTT values will differ, layout must not) ---"
 	-@diff -u /tmp/ref-traceroute.txt /tmp/our-traceroute.txt || true
