@@ -50,6 +50,51 @@ cloud-init hâlâ kuruyordur; bir kez bekle:
 ssh -i ~/vm/ft_traceroute/id_vm -p 2222 tester@127.0.0.1 'sudo cloud-init status --wait'
 ```
 
+## Nereye kuruluyor
+
+Disk ~1,3 GB + image ~400 MB. Bir 42 makinesinde ev dizini kotası bunu
+kaldırmaz, bu yüzden script **goinfre varsa oraya** kurar:
+
+```
+1. $HOME/goinfre/ft_traceroute      <- 42 makinelerinde bu seçilir
+2. /goinfre/$USER/ft_traceroute
+3. $HOME/sgoinfre/ft_traceroute
+4. /sgoinfre/$USER/ft_traceroute
+5. $HOME/vm/ft_traceroute           <- goinfre yoksa
+```
+
+Script başlarken hangisini seçtiğini basar ve 2,5 GB'tan az boş yer varsa uyarır.
+Elle vermek için: `VM_DIR=/başka/yol sh vm/create-vm.sh`
+
+> goinfre düzenli olarak temizlenir. VM silinirse `sh vm/create-vm.sh` tekrar
+> kurar; repoda duran tek şey tarif olduğu için kayıp yok.
+
+## TLS hatası alırsan
+
+42 makinelerinde sık görülür:
+
+```
+curl: (60) SSL certificate ... unable to get local issuer certificate
+```
+
+Image'da sorun yok — host'ta kullanılabilir bir CA bundle yok. Script bunu
+kendisi çözmeye çalışır: bilinen trust store yollarını, `CURL_CA_BUNDLE` /
+`SSL_CERT_FILE` değişkenlerini ve Python `certifi`'yi sırayla dener, olmazsa
+`wget`'e düşer. Yine de olmazsa:
+
+```bash
+# 1. trust store'u kur
+sudo apt install ca-certificates && sudo update-ca-certificates
+
+# 2. ya da elindeki bundle'ı göster
+CURL_CA_BUNDLE=/path/to/ca-bundle.crt sh vm/create-vm.sh
+
+# 3. ya da image'ı elle indirip VM_DIR'e koy, script indirmeyi atlar
+```
+
+Script **doğrulamayı kendi kendine kapatmaz**; `-k` ile indirmek yerine ne
+yapılacağını söyler.
+
 ## Ayarlar
 
 Hepsi ortam değişkeniyle değişir:

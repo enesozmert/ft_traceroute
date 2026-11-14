@@ -23,8 +23,12 @@
 
 set -eu
 
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+. "$SCRIPT_DIR/common.sh"
+
 VM_NAME="${VM_NAME:-ft-tr-vm}"
-VM_DIR="${VM_DIR:-$HOME/vm/ft_traceroute}"
+# goinfre when it exists (home quotas do not fit a 1.3 GB disk), else ~/vm.
+VM_DIR="${VM_DIR:-$(vm_default_dir)}"
 SSH_PORT="${SSH_PORT:-2222}"
 MEMORY="${MEMORY:-4096}"
 CPUS="${CPUS:-4}"
@@ -65,12 +69,25 @@ done
 mkdir -p "$VM_DIR"
 cd "$VM_DIR"
 
+echo "==> VM directory: $VM_DIR"
+case "$VM_DIR" in
+	*goinfre*) : ;;
+	*) echo "    (no goinfre found; set VM_DIR=... if this partition is small)" ;;
+esac
+
+# The image plus the grown VDI need roughly 2 GB.
+FREE_MB=$(df -Pm "$VM_DIR" 2>/dev/null | awk 'NR==2 {print $4}')
+if [ -n "${FREE_MB:-}" ] && [ "$FREE_MB" -lt 2500 ]; then
+	echo "    warning: only ${FREE_MB} MB free here; ~2500 MB recommended" >&2
+fi
+
 # ---------------------------------------------------------------------------
 # 2. disk — official Debian cloud image, converted to VDI and grown
 # ---------------------------------------------------------------------------
 if [ ! -f "debian-13-$ARCH.qcow2" ]; then
 	echo "==> downloading $IMAGE_URL"
-	curl -fL --retry 3 -o "debian-13-$ARCH.qcow2" "$IMAGE_URL"
+	echo "    into $VM_DIR"
+	vm_download "$IMAGE_URL" "debian-13-$ARCH.qcow2"
 fi
 
 if [ ! -f disk.vdi ]; then

@@ -9,9 +9,17 @@
 
 set -eu
 
-VM_DIR="${VM_DIR:-$HOME/vm/ft_traceroute}"
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+. "$SCRIPT_DIR/common.sh"
+
+VM_DIR="${VM_DIR:-$(vm_default_dir)}"
 SSH_PORT="${SSH_PORT:-2222}"
 REPO="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+
+[ -f "$VM_DIR/id_vm" ] || {
+	echo "no VM key at $VM_DIR/id_vm -- run 'sh vm/create-vm.sh' first" >&2
+	exit 1
+}
 
 SSH="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
 	-o LogLevel=ERROR -i $VM_DIR/id_vm -p $SSH_PORT tester@127.0.0.1"

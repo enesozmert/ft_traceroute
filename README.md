@@ -169,7 +169,21 @@ sh vm/run-tests.sh gates    # + norminette / strict / valgrind / diff-ref
 ```
 
 **SSH anahtarı repoda yok** — olmamalı da. Script her makinede kendi
-`~/vm/ft_traceroute/id_vm` anahtarını üretir.
+`id_vm` anahtarını üretir.
+
+**Nereye kuruluyor:** disk ~1,3 GB + image ~400 MB. 42 makinelerinde ev dizini
+kotası bunu kaldırmadığı için script **goinfre varsa oraya** kurar
+(`$HOME/goinfre` → `/goinfre/$USER` → `$HOME/sgoinfre` → `/sgoinfre/$USER`,
+yoksa `$HOME/vm`). Başlarken hangisini seçtiğini basar, yer azsa uyarır.
+Elle vermek için `VM_DIR=/başka/yol sh vm/create-vm.sh`.
+
+**TLS hatası** (`curl: (60) ... unable to get local issuer certificate`) 42
+makinelerinde sık görülür: host'ta kullanılabilir CA bundle yoktur. Script
+bilinen trust store yollarını, `CURL_CA_BUNDLE` / `SSL_CERT_FILE` değişkenlerini
+ve Python `certifi`'yi dener, olmazsa `wget`'e düşer. Yine de olmazsa
+`sudo apt install ca-certificates && sudo update-ca-certificates`, ya da
+`CURL_CA_BUNDLE=/path/to/bundle.crt sh vm/create-vm.sh`. Script doğrulamayı
+kendi kendine kapatmaz.
 
 Script tekrar çalıştırılabilir: VM kuruluysa yeniden kurmaz, kapalıysa başlatır,
 çalışıyorsa sadece bağlantı bilgisini basar.
@@ -196,6 +210,8 @@ ssh -i ~/vm/ft_traceroute/id_vm -p 2222 tester@127.0.0.1 'sudo cloud-init status
 SSH_PORT=2345 MEMORY=8192 CPUS=8 DISK_MB=20480 sh vm/create-vm.sh
 ARCH=amd64 sh vm/create-vm.sh          # mimariyi zorla (varsayılan: host'unki)
 VM_NAME=ft-tr-2 sh vm/create-vm.sh     # ikinci bir VM
+VM_DIR=/goinfre/$USER/tr sh vm/create-vm.sh   # kurulum yerini elle ver
+CURL_CA_BUNDLE=/path/to/bundle.crt sh vm/create-vm.sh   # TLS sorunu varsa
 BRIDGE="enp0s31f6" sh vm/create-vm.sh  # bridged ağ — çok hop'lu trace için
 ```
 
@@ -351,6 +367,7 @@ ft_traceroute/
 ├── vm/                      # doğrulama VM'i (headless VirtualBox)
 │   ├── create-vm.sh         # Debian 13 cloud image'dan VM kurar ve başlatır
 │   ├── run-tests.sh         # projeyi VM'e senkronlar, suite'i root ile koşar
+│   ├── common.sh            # goinfre tespiti + CA bundle çözümü
 │   └── README.md
 │
 ├── docker/
