@@ -1,0 +1,6 @@
+# Debian traceroute(8), `traceroute -n -m 2 8.8.8.8`
+# Layout kaynagi: T-704 ve T-709 bu duzene gore dogrulanir.
+
+traceroute to 8.8.8.8 (8.8.8.8), 2 hops max, 60 byte packets
+ 1  172.23.0.1  0.090 ms  0.012 ms  0.009 ms
+ 2  * * *

@@ -25,10 +25,10 @@ cloud-init ile sağlanmıştır.
 
 ---
 
-## 2. Test suite — 47/47
+## 2. Test suite — 50/50
 
 ```
-==> 47 passed, 0 failed, 0 skipped
+==> 50 passed, 0 failed, 0 skipped
 ```
 
 Hiçbir case SKIP değil: VM'de root olduğumuz için raw ICMP socket gerektiren
@@ -39,6 +39,7 @@ T-7xx ve T-82x case'leri de koştu.
 | T-1xx | Executable adı, Makefile kuralları, `fclean`/`re` davranışı | ✅ 7/7 |
 | T-2xx | `O_NONBLOCK` / `fcntl` / `system` / `exec*` / `popen` yok, libC-only link | ✅ 4/4 |
 | T-5xx | CLI kontratı, IPv4 ve FQDN girişi, hata yolları | ✅ 10/10 |
+| T-6xx | Wire üzerinde protokol: UDP 33434+ adımlama, 32 bayt payload, port unreachable | ✅ 3/3 |
 | T-7xx | Banner, hop satırı, reverse DNS yok, layout, hop numaraları, durma, SIGINT, ±30 ms | ✅ 9/9 |
 | T-8xx | Bonus flag doğrulaması ve `--help` metni | ✅ 12/12 |
 | T-82x | Bonus flag'lerin canlı trace etkisi | ✅ 5/5 |
@@ -132,6 +133,6 @@ make && make test && make test-net NET_HOST=8.8.8.8
 
 | Madde | Durum |
 |-------|-------|
-| T-1003 — Linux kernel ≥ 4.0 VM'de doğrulama | ✅ kapandı (kernel 6.12, 47/47 test) |
+| T-1003 — Linux kernel ≥ 4.0 VM'de doğrulama | ✅ kapandı (kernel 6.12, 50/50 test) |
 | T-1004 — çok hop'lu gerçek ağ | ⚠ ortam engeli; NAT ICMP'yi yutuyor, referans araç da aynı |
 | Koşu sırasında bulunan hata | ✅ düzeltildi (Makefile otomatik setcap) |

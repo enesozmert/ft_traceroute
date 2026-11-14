@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>ft_traceroute — Genel Bakış</title>
+<style>
+  @page { size: A4 landscape; margin: 10mm; }
+
+  :root {
+    --ink:      #111111;
+    --ink-soft: #444444;
+    --ink-mute: #6b6b6b;
+    --line:     #c9c9c9;
+    --blue:     #2c5d8f;
+    --blue-bg:  #eef4fb;
+    --green:    #2e7d45;
+    --green-bg: #eaf5ec;
+    --amber:    #b06b17;
+    --amber-bg: #fdf3e3;
+    --red:      #b03030;
+    --red-bg:   #fdeaea;
+    --violet:   #5b3f91;
+    --violet-bg:#f4effa;
+    --grey-bg:  #f2f2f2;
+  }
+
+  html, body {
+    margin: 0; padding: 0;
+    background: #ffffff;
+    color: var(--ink);
+    font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 10pt;
+    line-height: 1.35;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  code, pre, .mono { font-family: "SF Mono", Menlo, Monaco, Consolas, monospace; }
+
+  section {
+    position: relative;
+    width: 277mm;
+    height: 186mm;
+    overflow: hidden;
+    page-break-after: always;
+    break-after: page;
+    display: flex;
+    flex-direction: column;
+  }
+  section:last-of-type { page-break-after: auto; break-after: auto; }
+
+  /* ---------- page header ---------- */
+  .ph { border-bottom: 0.6mm solid var(--ink); padding-bottom: 1.4mm; margin-bottom: 3mm; flex: 0 0 auto; }
+  .ph .row { display: flex; align-items: baseline; justify-content: space-between; }
+  h1 { font-size: 17pt; margin: 0; letter-spacing: -0.2pt; }
+  .pnum { font-size: 9pt; color: var(--ink-mute); letter-spacing: 0.6pt; text-transform: uppercase; }
+  .sub { font-size: 8.6pt; color: var(--ink-soft); margin-top: 1mm; }
+  .sub code { font-size: 8.2pt; }
+
+  .body { flex: 1 1 auto; min-height: 0; }
+
+  /* ---------- page 1 ---------- */
+  .body.p1 { display: block; }
+  svg.flow { display: block; width: 100%; height: 100%; }
+
+  /* ---------- page 2 ---------- */
+  table.rules { width: 100%; border-collapse: collapse; font-size: 6.7pt; line-height: 1.2; }
+  table.rules th {
+    background: #ebebeb; color: var(--ink); text-align: left;
+    font-size: 6.7pt; font-weight: 700;
+    padding: 0.85mm 1.4mm; border: 0.2mm solid var(--line);
+  }
+  table.rules td { padding: 0.8mm 1.4mm; border: 0.2mm solid var(--line); vertical-align: top; }
+  table.rules tr:nth-child(even) td { background: #fafafa; }
+  table.rules td.id { font-weight: 700; white-space: nowrap; text-align: center; width: 7%; }
+  table.rules td.rule { width: 28%; }
+  table.rules td.how  { width: 40%; }
+  table.rules td.ev   { width: 25%; color: var(--ink-soft); }
+  table.rules td code, table.rules th code { font-size: 6.4pt; }
+  tr.band td { background: #e4e9ef !important; font-weight: 700; font-size: 6.6pt; letter-spacing: 0.3pt; text-transform: uppercase; color: var(--blue); padding: 0.7mm 1.4mm; }
+
+  .cols2 { display: flex; gap: 4mm; margin-top: 2.6mm; }
+  .card { border: 0.25mm solid var(--line); border-radius: 1mm; padding: 1.7mm 2.2mm; }
+  .card h2 { font-size: 9pt; margin: 0 0 1.2mm 0; }
+  .card.bonus { flex: 1 1 54%; background: var(--amber-bg); border-color: var(--amber); }
+  .card.bonus h2 { color: var(--amber); }
+  .card.cons  { flex: 1 1 46%; background: #fbfbfb; }
+
+  ul.bon { margin: 0; padding: 0; list-style: none; font-size: 7pt; line-height: 1.28; }
+  ul.bon li { margin-bottom: 0.7mm; }
+  ul.bon b { color: var(--amber); }
+  .capnote { font-size: 6.9pt; line-height: 1.3; color: var(--ink-soft); margin-top: 1.3mm; border-top: 0.2mm dashed var(--amber); padding-top: 1.1mm; }
+
+  .chip { border-left: 0.9mm solid var(--red); background: var(--red-bg); padding: 0.95mm 1.7mm; margin-bottom: 1mm; font-size: 6.9pt; line-height: 1.27; }
+  .chip b { display: inline; }
+  .chip.ok { border-left-color: var(--green); background: var(--green-bg); }
+  .chip.nf { border-left-color: var(--blue); background: var(--blue-bg); }
+
+  /* ---------- page 3 ---------- */
+  .zone { margin-bottom: 4mm; }
+  .ztitle { font-size: 9.6pt; font-weight: 700; margin: 0 0 1.6mm 0; display: flex; align-items: baseline; gap: 2mm; }
+  .ztitle .n { font-size: 8pt; color: #ffffff; background: var(--ink); border-radius: 50%; width: 4.6mm; height: 4.6mm; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .ztitle .hint { font-size: 7.6pt; font-weight: 400; color: var(--ink-mute); }
+
+  .cmp { display: flex; gap: 4mm; }
+  .cmp > div { flex: 1 1 50%; min-width: 0; }
+  .blk-h { font-size: 7.6pt; font-weight: 700; padding: 0.9mm 1.8mm; border: 0.25mm solid var(--line); border-bottom: 0; background: #ededed; }
+  .blk-h.ours { background: var(--violet-bg); border-color: var(--violet); color: var(--violet); }
+  pre.blk {
+    margin: 0; border: 0.25mm solid var(--line); background: #fbfbfb;
+    padding: 1.6mm 1.8mm; font-size: 7.2pt; line-height: 1.42; white-space: pre; overflow: hidden;
+  }
+  pre.blk.ours { border-color: var(--violet); background: #fcfaff; }
+  .diffnote { margin-top: 1.6mm; font-size: 7.4pt; background: var(--green-bg); border-left: 0.9mm solid var(--green); padding: 1.1mm 1.8mm; }
+  .diffnote b { color: var(--green); }
+
+  .bex { display: flex; gap: 3.2mm; }
+  .bex > div { min-width: 0; }
+  .bex > div:nth-child(1) { flex: 0.80 1 0; }
+  .bex > div:nth-child(2) { flex: 1.00 1 0; }
+  .bex > div:nth-child(3) { flex: 1.34 1 0; }
+  .bex .cmd { font-size: 7.2pt; font-weight: 700; margin-bottom: 0.9mm; }
+  .bex .cmd span { color: var(--amber); }
+  pre.small { margin: 0; font-size: 6.5pt; line-height: 1.4; white-space: pre; overflow: hidden;
+    border: 0.25mm solid var(--line); background: #fbfbfb; padding: 1.3mm 1.6mm; }
+  .bex .why { font-size: 6.9pt; color: var(--ink-soft); margin-top: 0.9mm; }
+
+  .prose { font-size: 8.7pt; line-height: 1.5; text-align: justify; column-count: 2; column-gap: 6mm; column-rule: 0.2mm solid var(--line); }
+  .prose p { margin: 0 0 2.2mm 0; }
+  .prose code { font-size: 8.1pt; }
+  .prose b { color: var(--blue); }
+
+  .metrics { display: flex; gap: 2mm; margin-top: 3mm; }
+  .metrics > div { flex: 1 1 0; border: 0.25mm solid var(--green); background: var(--green-bg); text-align: center; padding: 1.4mm 0.6mm; border-radius: 0.8mm; }
+  .metrics .v { font-size: 10.4pt; font-weight: 700; color: var(--green); line-height: 1.1; }
+  .metrics .k { font-size: 6.6pt; color: var(--ink-soft); margin-top: 0.4mm; }
+
+  .foot { position: absolute; bottom: 0; left: 0; right: 0; font-size: 6.8pt; color: var(--ink-mute); border-top: 0.2mm solid var(--line); padding-top: 1mm; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+
+<!-- ======================= PAGE 1 ======================= -->
+<section>
+  <div class="ph">
+    <div class="row">
+      <h1>ft_traceroute — Çalışma mantığı</h1>
+      <div class="pnum">Ecole 42 · Subject v5.0 · 1 / 3</div>
+    </div>
+    <div class="sub">
+      UDP probe gönder, raw ICMP ile dinle: <code>TTL</code> alanı 1'den 30'a kadar artırılır; her router kendi
+      ICMP hatasını geri yollar ve böylece yol hop hop ortaya çıkar. Kaynak: <code>docs/sdd/SDD.md</code> §2,
+      <code>docs/rules/08-network-protocol.md</code>
+    </div>
+  </div>
+
+  <div class="body p1">
+  <svg class="flow" viewBox="0 0 1100 668" xmlns="http://www.w3.org/2000/svg"
+       font-family="-apple-system, Helvetica Neue, Helvetica, Arial, sans-serif">
+    <defs>
+      <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#333333"/>
+      </marker>
+      <marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#b03030"/>
+      </marker>
+    </defs>
+
+    <!-- ===== 1. BASLATMA (left column) ===== -->
+    <text x="15" y="44" font-size="13" font-weight="700" fill="#2c5d8f">1 · Başlatma</text>
+
+    <rect x="15" y="52" width="190" height="46" rx="4" fill="#eef4fb" stroke="#2c5d8f" stroke-width="1.4"/>
+    <text x="110" y="72" font-size="12" font-weight="700" text-anchor="middle" fill="#111">CLI</text>
+    <text x="110" y="88" font-size="9.5" text-anchor="middle" fill="#333" font-family="Menlo, monospace">./ft_traceroute &lt;hedef&gt;</text>
+    <line x1="110" y1="98" x2="110" y2="116" stroke="#333" stroke-width="1.4" marker-end="url(#ar)"/>
+
+    <rect x="15" y="118" width="190" height="52" rx="4" fill="#eef4fb" stroke="#2c5d8f" stroke-width="1.4"/>
+    <text x="110" y="137" font-size="12" font-weight="700" text-anchor="middle" fill="#111">parse_args</text>
+    <text x="110" y="152" font-size="9.5" text-anchor="middle" fill="#333">tek opsiyon: <tspan font-family="Menlo, monospace">--help</tspan></text>
+    <text x="110" y="164" font-size="9.5" text-anchor="middle" fill="#333">tek hedef — fazlası hata</text>
+    <line x1="110" y1="170" x2="110" y2="188" stroke="#333" stroke-width="1.4" marker-end="url(#ar)"/>
+
+    <rect x="15" y="190" width="190" height="56" rx="4" fill="#eef4fb" stroke="#2c5d8f" stroke-width="1.4"/>
+    <text x="110" y="209" font-size="12" font-weight="700" text-anchor="middle" fill="#111">options_init</text>
+    <text x="110" y="224" font-size="8.6" text-anchor="middle" fill="#333" font-family="Menlo, monospace">max_hops=30  nprobes=3</text>
+    <text x="110" y="237" font-size="8.6" text-anchor="middle" fill="#333" font-family="Menlo, monospace">base_port=33434  len=60</text>
+    <line x1="110" y1="246" x2="110" y2="264" stroke="#333" stroke-width="1.4" marker-end="url(#ar)"/>
+
+    <rect x="15" y="266" width="190" height="52" rx="4" fill="#eef4fb" stroke="#2c5d8f" stroke-width="1.4"/>
+    <text x="110" y="285" font-size="12" font-weight="700" text-anchor="middle" fill="#111">resolve_hostname</text>
+    <text x="110" y="300" font-size="8.8" text-anchor="middle" fill="#333" font-family="Menlo, monospace">getaddrinfo(AF_INET)</text>
+    <text x="110" y="312" font-size="9" text-anchor="middle" fill="#333">hostname → IPv4 (yalnız başta)</text>
+    <line x1="110" y1="318" x2="110" y2="336" stroke="#333" stroke-width="1.4" marker-end="url(#ar)"/>
+
+    <rect x="15" y="338" width="190" height="46" rx="4" fill="#eef4fb" stroke="#2c5d8f" stroke-width="1.4"/>
+    <text x="110" y="358" font-size="12" font-weight="700" text-anchor="middle" fill="#111">create_sockets</text>
+    <text x="110" y="374" font-size="9" text-anchor="middle" fill="#333">socket çifti açılır</text>
+
+    <!-- init -> sockets, left channel -->
+    <polyline points="205,361 228,361 228,90 246,90" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#ar)"/>
+
+    <!-- ===== 2. SOCKET CIFTI ===== -->
+    <text x="250" y="44" font-size="13" font-weight="700" fill="#2e7d45">2 · Socket çifti</text>
+
+    <rect x="250" y="52" width="205" height="80" rx="4" fill="#eaf5ec" stroke="#2e7d45" stroke-width="1.4"/>
+    <text x="352" y="69" font-size="11.5" font-weight="700" text-anchor="middle" fill="#2e7d45">GÖNDERİM</text>
+    <text x="352" y="85" font-size="8.8" text-anchor="middle" fill="#111" font-family="Menlo, monospace">SOCK_DGRAM / IPPROTO_UDP</text>
+    <text x="352" y="99" font-size="8.8" text-anchor="middle" fill="#111" font-family="Menlo, monospace">UDP hedef port 33434 + n</text>
+    <text x="352" y="113" font-size="8.8" text-anchor="middle" fill="#111" font-family="Menlo, monospace">setsockopt(IP_TTL, ttl)</text>
+    <text x="352" y="126" font-size="8.4" text-anchor="middle" fill="#555">root yetkisi gerekmez</text>
+
+    <rect x="475" y="52" width="205" height="80" rx="4" fill="#eaf5ec" stroke="#2e7d45" stroke-width="1.4"/>
+    <text x="577" y="69" font-size="11.5" font-weight="700" text-anchor="middle" fill="#2e7d45">ALIM</text>
+    <text x="577" y="85" font-size="8.8" text-anchor="middle" fill="#111" font-family="Menlo, monospace">SOCK_RAW / IPPROTO_ICMP</text>
+    <text x="577" y="99" font-size="9" text-anchor="middle" fill="#111">ICMP hataları normal</text>
+    <text x="577" y="112" font-size="9" text-anchor="middle" fill="#111">socket'e teslim edilmez</text>
+    <text x="577" y="126" font-size="8.4" text-anchor="middle" fill="#555">root / CAP_NET_RAW gerekir</text>
+
+    <!-- send socket -> loop -->
+    <line x1="352" y1="132" x2="352" y2="194" stroke="#2e7d45" stroke-width="1.4" marker-end="url(#ar)"/>
+    <!-- recv socket -> recv_reply, right channel inside container -->
+    <polyline points="577,132 577,146 625,146 625,359 563,359" fill="none" stroke="#2e7d45" stroke-width="1.4" marker-end="url(#ar)"/>
+
+    <!-- ===== 3. TTL DONGUSU ===== -->
+    <text x="250" y="157" font-size="13" font-weight="700" fill="#b06b17">3 · TTL döngüsü</text>
+    <rect x="250" y="162" width="435" height="293" rx="5" fill="#fffdf8" stroke="#b06b17" stroke-width="1.3" stroke-dasharray="6 4"/>
+    <text x="258" y="179" font-size="10.4" font-weight="700" fill="#b06b17">ttl = 1 → 30   ·   her hop için 3 probe</text>
+
+    <rect x="290" y="196" width="270" height="48" rx="4" fill="#fdf3e3" stroke="#b06b17" stroke-width="1.4"/>
+    <text x="425" y="215" font-size="11.5" font-weight="700" text-anchor="middle" fill="#111">send_probe</text>
+    <text x="425" y="232" font-size="8.6" text-anchor="middle" fill="#333" font-family="Menlo, monospace">IP_TTL ayarla + sendto(port)</text>
+    <line x1="425" y1="244" x2="425" y2="262" stroke="#333" stroke-width="1.4" marker-end="url(#ar)"/>
+
+    <rect x="290" y="264" width="270" height="52" rx="4" fill="#fdf3e3" stroke="#b06b17" stroke-width="1.4"/>
+    <text x="425" y="282" font-size="11.5" font-weight="700" text-anchor="middle" fill="#111">wait_reply</text>
+    <text x="425" y="297" font-size="8.6" text-anchor="middle" fill="#333" font-family="Menlo, monospace">select(2) + kalan deadline</text>
+    <text x="425" y="311" font-size="9" font-weight="700" text-anchor="middle" fill="#b03030">O_NONBLOCK YOK — socket blocking kalır</text>
+    <line x1="425" y1="316" x2="425" y2="334" stroke="#333" stroke-width="1.4" marker-end="url(#ar)"/>
+
+    <rect x="290" y="336" width="270" height="46" rx="4" fill="#fdf3e3" stroke="#b06b17" stroke-width="1.4"/>
+    <text x="425" y="355" font-size="11.5" font-weight="700" text-anchor="middle" fill="#111">recv_reply</text>
+    <text x="425" y="371" font-size="8.6" text-anchor="middle" fill="#333" font-family="Menlo, monospace">recvfrom + type/code sınıflandır</text>
+    <line x1="425" y1="382" x2="425" y2="398" stroke="#333" stroke-width="1.4" marker-end="url(#ar)"/>
+
+    <rect x="290" y="400" width="270" height="46" rx="4" fill="#fdf3e3" stroke="#b03030" stroke-width="1.8"/>
+    <text x="425" y="419" font-size="11.5" font-weight="700" text-anchor="middle" fill="#111">match_probe</text>
+    <text x="425" y="435" font-size="8.6" text-anchor="middle" fill="#333" font-family="Menlo, monospace">iç UDP hedef portu == beklenen?</text>
+
+    <!-- probe loop-back -->
+    <polyline points="290,423 268,423 268,220 288,220" fill="none" stroke="#b06b17" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+    <text x="263" y="330" font-size="8.4" fill="#b06b17" transform="rotate(-90 263 330)" text-anchor="middle">probe 1→3</text>
+
+    <!-- match_probe -> decisions -->
+    <polyline points="560,423 672,423 672,199 698,199" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#ar)"/>
+    <polyline points="672,285 698,285" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#ar)"/>
+    <polyline points="672,371 698,371" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#ar)"/>
+
+    <!-- ===== 4. ICMP KARARI ===== -->
+    <text x="700" y="157" font-size="13" font-weight="700" fill="#333">4 · ICMP yanıt kararı</text>
+
+    <rect x="700" y="166" width="205" height="66" rx="4" fill="#eef4fb" stroke="#2c5d8f" stroke-width="1.4"/>
+    <text x="802" y="185" font-size="10.6" font-weight="700" text-anchor="middle" fill="#111" font-family="Menlo, monospace">type 11</text>
+    <text x="802" y="200" font-size="9.2" text-anchor="middle" fill="#333">Time Exceeded — ara hop</text>
+    <text x="802" y="217" font-size="9.6" font-weight="700" text-anchor="middle" fill="#2c5d8f">hop kaydedilir → DEVAM</text>
+
+    <rect x="700" y="252" width="205" height="66" rx="4" fill="#fdeaea" stroke="#b03030" stroke-width="1.8"/>
+    <text x="802" y="271" font-size="10.6" font-weight="700" text-anchor="middle" fill="#111" font-family="Menlo, monospace">type 3 / code 3</text>
+    <text x="802" y="286" font-size="9.2" text-anchor="middle" fill="#333">Port Unreachable — hedef</text>
+    <text x="802" y="303" font-size="9.6" font-weight="700" text-anchor="middle" fill="#b03030">hop kaydedilir → DUR</text>
+
+    <rect x="700" y="338" width="205" height="66" rx="4" fill="#f2f2f2" stroke="#666666" stroke-width="1.4"/>
+    <text x="802" y="357" font-size="10.6" font-weight="700" text-anchor="middle" fill="#111">yanıt yok (5 s timeout)</text>
+    <text x="802" y="372" font-size="9.2" text-anchor="middle" fill="#333">probe kayboldu</text>
+    <text x="802" y="389" font-size="9.6" font-weight="700" text-anchor="middle" fill="#444">&quot;*&quot; basılır → DEVAM</text>
+
+    <text x="700" y="424" font-size="8.8" fill="#555">outer IP kaynak adresi = o hop'un adresi</text>
+    <text x="700" y="438" font-size="8.8" fill="#555">hedefe ulaşılınca döngü kırılır</text>
+
+    <!-- decisions -> output -->
+    <polyline points="905,199 918,199 918,300 933,300" fill="none" stroke="#333" stroke-width="1.4"/>
+    <polyline points="905,285 918,285" fill="none" stroke="#333" stroke-width="1.4"/>
+    <polyline points="905,371 918,371 918,300" fill="none" stroke="#333" stroke-width="1.4"/>
+    <polyline points="918,300 933,300" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#ar)"/>
+
+    <!-- ===== 5. CIKTI ===== -->
+    <text x="938" y="157" font-size="13" font-weight="700" fill="#5b3f91">5 · Çıktı</text>
+    <rect x="936" y="162" width="156" height="293" rx="5" fill="#faf8fd" stroke="#5b3f91" stroke-width="1.3" stroke-dasharray="6 4"/>
+    <text x="944" y="179" font-size="10" font-weight="700" fill="#5b3f91">stdout</text>
+
+    <rect x="944" y="188" width="140" height="76" rx="4" fill="#f4effa" stroke="#5b3f91" stroke-width="1.4"/>
+    <text x="1014" y="205" font-size="10.6" font-weight="700" text-anchor="middle" fill="#111">print_banner</text>
+    <text x="950" y="221" font-size="7.4" fill="#333" font-family="Menlo, monospace">traceroute to 8.8.8.8</text>
+    <text x="950" y="232" font-size="7.4" fill="#333" font-family="Menlo, monospace">(8.8.8.8), 30 hops</text>
+    <text x="950" y="243" font-size="7.4" fill="#333" font-family="Menlo, monospace">max, 60 byte packets</text>
+    <text x="950" y="257" font-size="7.6" fill="#666">trace başlamadan önce</text>
+
+    <rect x="944" y="282" width="140" height="92" rx="4" fill="#f4effa" stroke="#5b3f91" stroke-width="1.4"/>
+    <text x="1014" y="299" font-size="10.6" font-weight="700" text-anchor="middle" fill="#111">print_hop</text>
+    <text x="950" y="315" font-size="7.4" fill="#333" font-family="Menlo, monospace"> 1  172.23.0.1</text>
+    <text x="950" y="326" font-size="7.4" fill="#333" font-family="Menlo, monospace">    0.398 ms</text>
+    <text x="950" y="337" font-size="7.4" fill="#333" font-family="Menlo, monospace">    0.010 ms</text>
+    <text x="950" y="348" font-size="7.4" fill="#333" font-family="Menlo, monospace">    0.006 ms</text>
+    <text x="950" y="362" font-size="7.4" fill="#333" font-family="Menlo, monospace"> 2  * * *</text>
+
+    <text x="944" y="392" font-size="8.4" font-weight="700" fill="#b03030">hop satırında reverse DNS YOK</text>
+    <text x="944" y="405" font-size="8.2" fill="#555">ham IPv4 basılır — davranış</text>
+    <text x="944" y="417" font-size="8.2" fill="#555"><tspan font-family="Menlo, monospace">traceroute -n</tspan> ile aynıdır</text>
+    <text x="944" y="433" font-size="8.2" fill="#555">girinti: <tspan font-family="Menlo, monospace">%2d</tspan> + <tspan font-family="Menlo, monospace">%.3f ms</tspan></text>
+
+    <!-- ===== 6. BYTE LAYOUT ===== -->
+    <text x="15" y="486" font-size="12.4" font-weight="700" fill="#111">6 · Probe eşleştirme — ICMP hata paketinin bayt düzeni (RFC 792)</text>
+    <text x="855" y="492" font-size="9.4" font-weight="700" fill="#b06b17" text-anchor="middle">inner UDP 8 B — başlığın tamamı buradadır</text>
+
+    <rect x="40" y="498" width="235" height="56" fill="#ececec" stroke="#555555" stroke-width="1.3"/>
+    <text x="157" y="517" font-size="10" font-weight="700" text-anchor="middle" fill="#111">outer IP (20 B)</text>
+    <text x="157" y="532" font-size="8.4" text-anchor="middle" fill="#333">router'ın kaynak IP'si</text>
+    <text x="157" y="545" font-size="8.4" text-anchor="middle" fill="#333">= hop adresi</text>
+
+    <rect x="275" y="498" width="175" height="56" fill="#dce7f3" stroke="#2c5d8f" stroke-width="1.3"/>
+    <text x="362" y="517" font-size="10" font-weight="700" text-anchor="middle" fill="#111">ICMP 8 B</text>
+    <text x="362" y="532" font-size="8.4" text-anchor="middle" fill="#333" font-family="Menlo, monospace">type / code</text>
+    <text x="362" y="545" font-size="8.4" text-anchor="middle" fill="#333" font-family="Menlo, monospace">checksum</text>
+
+    <rect x="450" y="498" width="235" height="56" fill="#ececec" stroke="#555555" stroke-width="1.3"/>
+    <text x="567" y="517" font-size="10" font-weight="700" text-anchor="middle" fill="#111">inner IP (20 B)</text>
+    <text x="567" y="532" font-size="8.4" text-anchor="middle" fill="#333">bizim gönderdiğimiz</text>
+    <text x="567" y="545" font-size="8.4" text-anchor="middle" fill="#333">datagramın başlığı</text>
+
+    <rect x="685" y="498" width="85" height="56" fill="#fdf3e3" stroke="#b06b17" stroke-width="1.3"/>
+    <text x="727" y="530" font-size="9" text-anchor="middle" fill="#333" font-family="Menlo, monospace">source</text>
+    <rect x="770" y="498" width="85" height="56" fill="#ffd9a8" stroke="#b03030" stroke-width="2.6"/>
+    <text x="812" y="524" font-size="10" font-weight="700" text-anchor="middle" fill="#b03030" font-family="Menlo, monospace">dest</text>
+    <text x="812" y="540" font-size="8.4" text-anchor="middle" fill="#b03030">port</text>
+    <rect x="855" y="498" width="85" height="56" fill="#fdf3e3" stroke="#b06b17" stroke-width="1.3"/>
+    <text x="897" y="530" font-size="9" text-anchor="middle" fill="#333" font-family="Menlo, monospace">len</text>
+    <rect x="940" y="498" width="85" height="56" fill="#fdf3e3" stroke="#b06b17" stroke-width="1.3"/>
+    <text x="982" y="530" font-size="9" text-anchor="middle" fill="#333" font-family="Menlo, monospace">cksum</text>
+
+    <text x="40"   y="568" font-size="8" fill="#777">bayt 0</text>
+    <text x="275"  y="568" font-size="8" fill="#777">20</text>
+    <text x="450"  y="568" font-size="8" fill="#777">28</text>
+    <text x="685"  y="568" font-size="8" fill="#777">48</text>
+    <text x="1025" y="568" font-size="8" fill="#777" text-anchor="end">56</text>
+
+    <line x1="812" y1="618" x2="812" y2="558" stroke="#b03030" stroke-width="2" marker-end="url(#arR)"/>
+    <text x="812" y="638" font-size="11" font-weight="700" text-anchor="middle" fill="#b03030">eşleştirme anahtarı: iç UDP hedef portu</text>
+    <text x="812" y="654" font-size="8.6" text-anchor="middle" fill="#555" font-family="Menlo, monospace">port = 33434 + (ttl − 1) * nprobes + probe</text>
+
+    <text x="40" y="600" font-size="9" fill="#333">Başka hiçbir alan güvenilir değil: ICMP id/sequence UDP probe'da</text>
+    <text x="40" y="613" font-size="9" fill="#333">anlamsızdır, inner IP id'yi bazı router'lar değiştirir.</text>
+    <text x="40" y="632" font-size="8.8" fill="#555" font-family="Menlo, monospace">IHL = (vhl &amp; 0x0F) * 4  —  sabit 20 B varsayılmaz</text>
+    <text x="40" y="646" font-size="8.8" fill="#555">Her <tspan font-family="Menlo, monospace">memcpy</tspan> öncesi uzunluk kontrolü; kısa/bozuk paket sessizce atılır.</text>
+  </svg>
+  </div>
+</section>
+
+<!-- ======================= PAGE 2 ======================= -->
+<section>
+  <div class="ph">
+    <div class="row">
+      <h1>Subject gereksinimleri</h1>
+      <div class="pnum">Ecole 42 · Subject v5.0 · 2 / 3</div>
+    </div>
+    <div class="sub">
+      Zorunlu maddeler (Chapter V) ve teslim kuralları (Chapter VII), her biri karşılanma biçimi ve kanıtıyla.
+      Kural listesi: <code>docs/rules/01-subject-rules.md</code>
+    </div>
+  </div>
+
+  <div class="body">
+    <table class="rules">
+      <thead>
+        <tr>
+          <th style="width:7%; text-align:center">ID</th>
+          <th style="width:28%">Kural (subject)</th>
+          <th style="width:40%">Nasıl karşılandı</th>
+          <th style="width:25%">Kanıt — dosya / test</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="band"><td colspan="4">Mandatory — Chapter V</td></tr>
+
+        <tr><td class="id">R-01</td>
+          <td class="rule">Executable adı <code>ft_traceroute</code></td>
+          <td class="how">Makefile <code>output/ft_traceroute</code> üretir; isim birebir aynı, başka bir binary üretilmez</td>
+          <td class="ev"><code>Makefile</code> · T-110 · T-1xx</td></tr>
+
+        <tr><td class="id">R-02</td>
+          <td class="rule">C dilinde yazılacak, Makefile teslim edilecek</td>
+          <td class="how"><code>-std=c11</code> açıkça set edildi; tek Makefile, üçüncü taraf bağımlılık yok</td>
+          <td class="ev"><code>Makefile</code> · T-101 · T-108</td></tr>
+
+        <tr><td class="id">R-03</td>
+          <td class="rule">Makefile normal kuralları içerecek: <code>all clean fclean re</code></td>
+          <td class="how">Dördü de mevcut; <code>fclean</code> binary'yi gerçekten siler, <code>re</code> gerçekten yeniden kurar</td>
+          <td class="ev"><code>Makefile</code> · T-102…T-105 · T-1xx</td></tr>
+
+        <tr><td class="id">R-04</td>
+          <td class="rule">Yönetilecek <b>tek</b> opsiyon: <code>--help</code></td>
+          <td class="how"><code>parse_args</code> yalnız <code>--help</code>'i tanır (exit 0, usage stdout'a); tanınmayan her <code>-</code> argümanı hata — bu, bonus flag'lerin mandatory part'a sızmasını da engeller</td>
+          <td class="ev"><code>src/parse_args.c</code>, <code>src/parse_option.c</code> · T-505, T-506, T-512</td></tr>
+
+        <tr><td class="id">R-05</td>
+          <td class="rule">Tek IPv4 parametresi — adres <b>veya</b> hostname</td>
+          <td class="how">Tam bir positional argüman; <code>getaddrinfo(AF_INET)</code>, ilk sonuç alınır. İki hedef veya argümansız çalıştırma hata (usage stderr'e, exit ≠ 0)</td>
+          <td class="ev"><code>src/parse_args.c</code>, <code>src/resolve_hostname.c</code> · T-511, T-513, T-530, T-531</td></tr>
+
+        <tr><td class="id">R-06</td>
+          <td class="rule">FQDN yönetilecek, ancak <b>hop gösteriminde DNS resolution yapılmayacak</b></td>
+          <td class="how">Forward resolution yalnız başlangıçta, banner için (<code>hostname (IP)</code>). Hop satırları ham IPv4 basar — davranış <code>traceroute -n</code> ile aynı. <code>getnameinfo</code> mandatory yolda hiç çağrılmaz</td>
+          <td class="ev"><code>src/print_hop.c</code>, <code>src/resolve_hops.c</code> · T-703 (davranışsal güvence)</td></tr>
+
+        <tr><td class="id">R-07</td>
+          <td class="rule">Hop başına ±30 ms sapma tolere edilir</td>
+          <td class="how"><code>gettimeofday</code> probe'un hemen öncesinde ve yanıtın hemen sonrasında; RTT <code>%.3f ms</code>. <code>netem delay 50ms</code> altında referanstan sapma &lt; 2 ms</td>
+          <td class="ev"><code>src/compute_elapsed_ms.c</code> · T-611, T-708</td></tr>
+
+        <tr><td class="id">R-08</td>
+          <td class="rule">Socket'ler <code>O_NONBLOCK</code> moduna <b>alınmayacak</b></td>
+          <td class="how">İki socket de blocking kalır; bekleme <code>select(2)</code> ile ve kalan süre her turda deadline'dan hesaplanır. <code>fcntl</code> kaynakta hiç geçmez</td>
+          <td class="ev"><code>src/wait_reply.c</code>, <code>src/create_sockets.c</code> · T-605, T-2xx</td></tr>
+
+        <tr><td class="id">R-09</td>
+          <td class="rule">Sadece libC kullanılacak (kendi libft + printf serbest)</td>
+          <td class="how">Harici kütüphane yok; link satırı yalnız libc. Wire struct'lar (<code>t_iphdr</code>/<code>t_icmphdr</code>/<code>t_udphdr</code>) projede tanımlı — Linux/BSD başlık farkı bağımlılık yaratmaz</td>
+          <td class="ev"><code>Makefile</code> link satırı, <code>hdr/header.h</code> · T-2xx</td></tr>
+
+        <tr><td class="id">R-10</td>
+          <td class="rule">Gerçek <code>traceroute</code> <b>çağrılmayacak</b></td>
+          <td class="how"><code>system</code> / <code>exec*</code> / <code>popen</code> kaynakta hiç geçmiyor; referans binary yalnız <code>make diff-ref</code> karşılaştırmasında, program dışında kullanılır</td>
+          <td class="ev">grep denetimi · T-805 · T-2xx</td></tr>
+
+        <tr class="band"><td colspan="4">Submission — Chapter VII</td></tr>
+
+        <tr><td class="id">R-20</td>
+          <td class="rule">Git repository'ye teslim</td>
+          <td class="how">Repo kökü git altında; faz bazlı commit geçmişi (analiz → SDD → red test → kod → kalite → bonus)</td>
+          <td class="ev">repo kökü · T-1001, T-1002</td></tr>
+
+        <tr><td class="id">R-21</td>
+          <td class="rule">Hatalar makul şekilde yönetilecek; segfault / beklenmedik çıkış yok</td>
+          <td class="how">Tek exit noktası <code>main</code>, yardımcı fonksiyonlarda <code>exit()</code> yok; her allocation kontrollü; SIGINT handler yalnız <code>volatile sig_atomic_t</code> set eder (async-signal-safe)</td>
+          <td class="ev"><code>docs/rules/06-error-handling.md</code> · T-706, T-806, T-807 · valgrind 7/7</td></tr>
+
+        <tr><td class="id">R-22</td>
+          <td class="rule">Değerlendirme Linux kernel ≥ 4.0 VM üzerinde yapılır</td>
+          <td class="how">Ubuntu 22.04 Docker imajı (builder / runtime / dev), <code>cap_add NET_RAW + NET_ADMIN</code>; referans <code>traceroute</code> imaja dahil</td>
+          <td class="ev"><code>docker/Dockerfile</code>, <code>docker/docker-compose.yml</code> · T-111, T-112</td></tr>
+
+        <tr><td class="id">R-23</td>
+          <td class="rule">Çıktı girintisi gerçek traceroute ile <b>aynı</b></td>
+          <td class="how">Her iki çıktıda rakamlar <code>N</code>'e normalize edilip diff'lenir; fark boş. Banner, hop numarası <code>%2d</code>, adresin hop içinde yalnız değiştiğinde yazılması ve <code>*</code> ayrımı referanstan alındı</td>
+          <td class="ev"><code>make diff-ref</code> → <code>layout identical</code> · T-704, T-709</td></tr>
+      </tbody>
+    </table>
+
+    <div class="cols2">
+      <div class="card bonus">
+        <h2>Bonus (Chapter VI) — 5 / 5</h2>
+        <ul class="bon">
+          <li><b>B-01</b> <code>--resolve</code> — DNS management: opt-in reverse lookup. Varsayılan numerik kalır, böylece R-06 ihlal edilmez.</li>
+          <li><b>B-02</b> <code>-m &lt;hops&gt;</code> — maksimum hop sayısı, 1–255.</li>
+          <li><b>B-03</b> <code>-q &lt;probes&gt;</code> — hop başına probe, 1–10 (<code>TR_MAX_PROBES</code> = probe dizisinin boyutu, taşma imkânsız).</li>
+          <li><b>B-04</b> <code>-p &lt;port&gt;</code> — base UDP port, 1–65535.</li>
+          <li><b>B-05</b> <code>-w &lt;sec&gt;</code> — probe bekleme süresi, 1–60 s.</li>
+        </ul>
+        <div class="capnote">
+          Subject bonusu <b>en fazla 5</b> madde sayar ve bonusu <b>yalnızca mandatory part PERFECT ise</b>
+          değerlendirir — mandatory'de tek bir eksik varsa bonus hiç değerlendirilmez. <code>-V</code> bonus sayılmaz.
+          Değerler <code>strtol</code> ile okunur ve string'in tamamı tüketilmek zorundadır, bu yüzden <code>-m 5x</code>
+          sessizce 5 okunmaz, reddedilir. Bayraksız çalıştırmada program bit bit mandatory programdır:
+          T-701…T-704 bonus commit'inden sonra da geçiyor.
+        </div>
+      </div>
+
+      <div class="card cons">
+        <h2>Kritik kısıt denetimleri</h2>
+        <div class="chip nf"><b>Sadece libC.</b> Kendi libft ve <code>printf</code> serbest; başka hiçbir kütüphane linklenmiyor.</div>
+        <div class="chip"><b><code>O_NONBLOCK</code> yasak.</b> Bekleme <code>select(2)</code> ile. Denetlenebilir kural: <code>grep -r O_NONBLOCK src/ hdr/</code> boş dönmeli.</div>
+        <div class="chip"><b>Gerçek <code>traceroute</code> çağrılamaz.</b> <code>grep -rE 'system\(|execv|popen' src/</code> boş dönmeli.</div>
+        <div class="chip"><b>Hop gösteriminde DNS resolution yok.</b> <code>getnameinfo</code> yalnız bonus <code>--resolve</code> yolunda; bayraksız çalıştırmada erişilmez.</div>
+        <div class="chip ok"><b>±30 ms tolerans.</b> Hop başına izin verilen sapma; <code>select</code> uyanma gecikmesi ve kernel zamanlaması için fazlasıyla yeterli — ölçülen sapma &lt; 2 ms.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= PAGE 3 ======================= -->
+<section>
+  <div class="ph">
+    <div class="row">
+      <h1>Örnekler, orijinalle karşılaştırma ve genel anlatım</h1>
+      <div class="pnum">Ecole 42 · Subject v5.0 · 3 / 3</div>
+    </div>
+    <div class="sub">
+      Kayıtlı koşular: Docker (Ubuntu 22.04, <code>cap_add NET_RAW</code>) içinde, referans olarak imajdaki
+      <code>traceroute(8)</code> binary'si ile; ayrıca headless Linux VM'de doğrulandı (Debian 13 arm64,
+      kernel <code>6.12.116</code>, 50/50). Kaynak: <code>docs/report/report.md</code>,
+      <code>docs/report/vm-test-report.md</code>, <code>make diff-ref</code>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- ZONE A -->
+    <div class="zone">
+      <div class="ztitle"><span class="n">a</span> Orijinalle yan yana karşılaştırma
+        <span class="hint">referans <code>-n</code> ile koşulur: subject hop'ta DNS'i yasakladığı için karşılaştırılabilir referans numerik olandır</span></div>
+      <div class="cmp">
+        <div>
+          <div class="blk-h">referans &nbsp;·&nbsp; <code>traceroute -n 8.8.8.8</code></div>
+<pre class="blk">traceroute to 8.8.8.8 (8.8.8.8), 30 hops max, 60 byte packets
+ 1  172.23.0.1  0.545 ms  0.466 ms  0.429 ms
+ 2  * * *</pre>
+        </div>
+        <div>
+          <div class="blk-h ours">bizim &nbsp;·&nbsp; <code>ft_traceroute 8.8.8.8</code></div>
+<pre class="blk ours">traceroute to 8.8.8.8 (8.8.8.8), 30 hops max, 60 byte packets
+ 1  172.23.0.1  0.398 ms  0.010 ms  0.006 ms
+ 2  * * *</pre>
+        </div>
+      </div>
+      <div class="diffnote">
+        Rakam-normalize edilmiş düzen farkı <b>boş</b>: her iki çıktıda tüm rakamlar <code>N</code>'e çevrilip diff'lendiğinde
+        hiçbir hunk çıkmıyor — <code>make diff-ref</code> <b>&quot;layout identical&quot;</b> basıyor (test <b>T-704</b>).
+        Tek fark doğası gereği değişen RTT değerleridir. <code>2  * * *</code> satırı Docker bridge'inin hop 1'den sonrasını
+        NAT'lamasından kaynaklanır ve iki tarafta aynı şekilde görünür.
+      </div>
+    </div>
+
+    <!-- ZONE B -->
+    <div class="zone">
+      <div class="ztitle"><span class="n">b</span> Bonus örnekleri
+        <span class="hint">bayrak verilmedikçe mandatory davranış değişmez</span></div>
+      <div class="bex">
+        <div>
+          <div class="cmd"><span>varsayılan (mandatory)</span> — <code>ft_traceroute 127.0.0.1</code></div>
+<pre class="small"> 1  127.0.0.1  0.811 ms  0.005 ms  0.004 ms</pre>
+          <div class="why">Ham IPv4. <code>getnameinfo</code> hiç çağrılmaz — R-06.</div>
+        </div>
+        <div>
+          <div class="cmd"><span>B-01</span> — <code>ft_traceroute --resolve 127.0.0.1</code></div>
+<pre class="small"> 1  localhost (127.0.0.1)  0.010 ms  0.004 ms  0.004 ms</pre>
+          <div class="why">Opt-in reverse DNS: adres <code>isim (adres)</code> biçimine döner — referansın varsayılan biçimi. PTR kaydı yoksa ham adrese düşer.</div>
+        </div>
+        <div>
+          <div class="cmd"><span>B-02 + B-03</span> — <code>ft_traceroute -m 1 -q 5 8.8.8.8</code></div>
+<pre class="small"> 1  172.23.0.1  0.032 ms  0.006 ms  0.005 ms  0.004 ms  0.005 ms</pre>
+          <div class="why"><code>-m 1</code> trace'i tek hop'ta kesiyor, <code>-q 5</code> hop başına 5 probe gönderiyor — satır düzeni bozulmuyor (T-820, T-821).</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ZONE C -->
+    <div class="zone">
+      <div class="ztitle"><span class="n">c</span> Genel anlatım — protokol kararı, eşleştirme ve kalite kanıtı</div>
+      <div class="prose">
+        <p>Subject hiçbir yerde probe protokolünü adlandırmıyor, ama iki maddesi birlikte cevabı tek bir seçeneğe indiriyor.
+        Birincisi çıktının gerçek <code>traceroute</code> ile <b>aynı girintide</b> olmasını istemesi: Linux'ta
+        <code>traceroute(8)</code>'in varsayılan modu UDP probe'dur, dolayısıyla taklit edilecek çıktı UDP modunun çıktısıdır.
+        İkincisi bonus listesinin <code>-p</code> (hedef port) sunup <code>-I</code> (ICMP modu) bayrağını hiç anmaması:
+        port kavramı yalnızca UDP probe'da anlamlıdır, ICMP echo probe'da karşılığı yoktur. Bu yüzden karar
+        <b>UDP ile gönder, raw ICMP ile dinle</b> oldu; UDP socket'i root istemez, ICMP hataları ise yalnızca raw socket'e
+        teslim edildiği için alım tarafı <code>SOCK_RAW / IPPROTO_ICMP</code>'dir.</p>
+
+        <p>Raw ICMP socket host'a gelen <b>tüm</b> ICMP trafiğini teslim ettiğinden, gelen her datagram bizim probe'umuz
+        sayılamaz — aynı anda çalışan bir <code>ping</code> de aynı socket'e düşer. RFC 792, ICMP hata mesajının gövdesine
+        hatayı tetikleyen datagramın IP başlığını ve ilk 8 baytını koymayı zorunlu kılar; UDP başlığı tam 8 bayt olduğu için
+        orijinal hedef port oradadır ve eşleştirme <b>o porta</b> göre yapılır. Başka hiçbir alan güvenilir değildir: outer IP
+        kaynak adresi yalnızca hop'un adresidir, probe kimliği değil; ICMP id/sequence alanları UDP probe'da anlamsızdır;
+        inner IP id'yi bazı router'lar değiştirir. İç başlığa giden offset her seferinde <code>(vhl &amp; 0x0F) * 4</code> ile
+        hesaplanır ve her <code>memcpy</code> öncesi uzunluk kontrol edilir, böylece IP seçenekli veya kırpılmış paketler
+        yanlış offset'ten okunmaz.</p>
+
+        <p>Kalite kanıtı ölçülmüş durumdadır: test suite <b>50/50</b> geçiyor (0 fail, 0 skip — yetkili koşuda), norminette
+        <b>22/22</b> dosyada <b>0 error</b>, strict build (<code>-Wpedantic -Wshadow -Wconversion -Wcast-align
+        -Wstrict-prototypes</code>) <b>0 warning</b> veriyor. Valgrind <b>7 ayrı yolda 0 error / 0 leak</b> raporluyor —
+        <code>--help</code>, bilinmeyen host, argümansız çalıştırma, <code>-m 0</code>, değersiz <code>-m</code>,
+        <code>-q 99</code> ve SIGINT ile kesilen canlı trace dahil. Zamanlama tarafında <code>tc qdisc ... netem delay 50ms</code>
+        altında ölçülen RTT referans <code>traceroute</code>'un değerlerinden <b>2 ms'den az</b> sapıyor; subject'in verdiği
+        tolerans ±30 ms, yani ölçüm payın onda biri kadar içinde kalıyor.</p>
+      </div>
+
+      <div class="metrics">
+        <div><div class="v">50 / 50</div><div class="k">test · 0 fail, 0 skip</div></div>
+        <div><div class="v">22 / 22</div><div class="k">norminette · 0 error</div></div>
+        <div><div class="v">0</div><div class="k">strict build warning</div></div>
+        <div><div class="v">0 / 0</div><div class="k">valgrind error / leak · 7 path</div></div>
+        <div><div class="v">&lt; 2 ms</div><div class="k">RTT sapması · tolerans ±30 ms</div></div>
+        <div><div class="v">5 / 5</div><div class="k">bonus · subject kotası dolu</div></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</body>
+</html>

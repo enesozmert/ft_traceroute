@@ -4,7 +4,7 @@
 > `traceroute` komutunun **C** dilinde sıfırdan yeniden yazılması.
 
 [![Norminette](https://img.shields.io/badge/norminette-22%2F22%20OK%20(0%20errors)-brightgreen)](docs/tasks/TASKS.md)
-[![Tests](https://img.shields.io/badge/tests-29%2F29%20passing-brightgreen)](test/run_tests.sh)
+[![Tests](https://img.shields.io/badge/tests-50%2F50%20passing-brightgreen)](test/run_tests.sh)
 [![Valgrind](https://img.shields.io/badge/valgrind-0%20errors%20%2F%200%20leaks-brightgreen)](docs/tasks/TASKS.md)
 [![Strict](https://img.shields.io/badge/strict%20build-0%20warnings-brightgreen)](Makefile)
 
@@ -118,7 +118,7 @@ Protokol seçiminin subject'ten nasıl türetildiği: [`docs/sdd/SDD.md`](docs/s
 ### Test suite (`make test`)
 
 ```
-29 passed, 0 failed, 0 skipped
+50 passed, 0 failed, 0 skipped
 
 T-5xx  CLI kontratı (--help, argümansız, geçersiz opsiyon, iki hedef, bilinmeyen host)
 T-7xx  banner layout, hop satırı layout, reverse DNS yok,

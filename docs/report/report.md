@@ -15,7 +15,7 @@ regresyon olmadığı testle gösterildi.
 | Alan | Durum |
 |------|-------|
 | Subject mandatory (R-01 … R-10) | ✅ tamam |
-| Test suite | ✅ 29/29 |
+| Test suite | ✅ 50/50 |
 | Norminette | ✅ 22/22 OK, 0 error |
 | Strict build | ✅ 0 warning |
 | Valgrind | ✅ 0 error, 0 leak (7 path) |

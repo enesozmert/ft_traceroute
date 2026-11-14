@@ -71,6 +71,10 @@
 - ✅ T-608 — `match_probe`: iç IP + UDP başlığından port eşleştirme
 - ✅ T-609 — Tüm `memcpy` öncesi uzunluk kontrolü
 - ✅ T-610 — IHL `(vhl & 0x0F) * 4` ile hesaplanıyor, sabit 20 varsayılmıyor
+- ✅ T-601 — `tcpdump` kanıtı: UDP probe'ları 33434'ten başlayıp her probe'da birer artıyor
+- ✅ T-602 — `tcpdump` kanıtı: UDP payload 32 bayt → 20+8+32 = 60, banner ile tutarlı
+- ✅ T-603 — `tcpdump` kanıtı: hedef ICMP port unreachable dönüyor, döngü duruyor
+- ✅ T-612 — Wire kayıtları `test/fixtures/` altına alındı (referans çıktı + tcpdump)
 - ✅ T-611 — RTT doğrulaması: `tc netem delay 50ms` altında 50.4–52.4 ms ölçüldü
              (gerçek traceroute: 50.3–50.5 ms, sapma < 2 ms, tolerans ±30 ms)
 
@@ -104,7 +108,7 @@
 
 - ✅ T-1001 — `git init` + ilk commit
 - ✅ T-1002 — `make fclean && make` temiz checkout'ta çalışıyor
-- ✅ T-1005 — Bonus commit'i, mandatory regresyonu yok (29/29 test)
+- ✅ T-1005 — Bonus commit'i, mandatory regresyonu yok (50/50 test)
 - ✅ T-1006 — `make cmake-build` doğrulandı (CMake ile de derleniyor)
 - ✅ T-1007 — `make asan` doğrulandı (AddressSanitizer altında canlı trace temiz)
 - ✅ T-1008 — `make diff-ref` doğrulandı → `layout identical`
@@ -113,7 +117,7 @@
              (referans koşu `traceroute -n` ile yapılır; subject hop'ta DNS'i yasakladığı
              için karşılaştırılabilir referans numerik olandır)
 - ✅ T-1003 — Linux VM'de doğrulandı: VirtualBox headless, Debian 13 arm64,
-             kernel 6.12.116, 47/47 test — [`docs/report/vm-test-report.md`](../report/vm-test-report.md)
+             kernel 6.12.116, 50/50 test — [`docs/report/vm-test-report.md`](../report/vm-test-report.md)
 - ⚠ T-1004 — Çok hop'lu gerçek ağ: NAT (hem Docker hem VirtualBox) upstream ICMP
              Time Exceeded'ı yutuyor; referans `traceroute` de aynı çıktıyı veriyor.
              Bridged ağı olan makinede veya okul VM'inde kapatılacak.

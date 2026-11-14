@@ -1,0 +1,17 @@
+# tcpdump -i any -n "udp portrange 33434-33500 or icmp"
+# Kosulan komut: ./output/ft_traceroute -m 2 8.8.8.8
+#
+# Kanit:
+#  - hedef port her probe'da birer artiyor: 33434, 33435, 33436, ...
+#  - UDP payload 32 bayt  => 20 (IP) + 8 (UDP) + 32 = 60 bayt, banner ile tutarli
+#  - ara router ICMP time exceeded in-transit (type 11) donuyor
+
+15:43:06.874336 eth0  Out IP 172.23.0.2.57340 > 8.8.8.8.33434: UDP, length 32
+15:43:06.874560 eth0  In  IP 172.23.0.1 > 172.23.0.2: ICMP time exceeded in-transit, length 68
+15:43:06.874649 eth0  Out IP 172.23.0.2.57340 > 8.8.8.8.33435: UDP, length 32
+15:43:06.874661 eth0  In  IP 172.23.0.1 > 172.23.0.2: ICMP time exceeded in-transit, length 68
+15:43:06.874682 eth0  Out IP 172.23.0.2.57340 > 8.8.8.8.33436: UDP, length 32
+15:43:06.874697 eth0  In  IP 172.23.0.1 > 172.23.0.2: ICMP time exceeded in-transit, length 68
+15:43:06.874726 eth0  Out IP 172.23.0.2.57340 > 8.8.8.8.33437: UDP, length 32
+15:43:11.881771 eth0  Out IP 172.23.0.2.57340 > 8.8.8.8.33438: UDP, length 32
+15:43:16.892174 eth0  Out IP 172.23.0.2.57340 > 8.8.8.8.33439: UDP, length 32

@@ -200,6 +200,59 @@ stream_matches T-811 "--help documents -w"               out "^  -w " --help
 stream_matches T-812 "--help documents --resolve"        out "^  --resolve" --help
 
 # ---------------------------------------------------------------------------
+# T-6xx — protocol on the wire. These watch what actually leaves the host,
+# which is the only way to prove the probe protocol rather than infer it from
+# the printed output. Needs tcpdump and privileges.
+# ---------------------------------------------------------------------------
+printf -- '\n--- T-6xx protocol on the wire\n'
+
+WIRE=/tmp/ft_tr_wire.txt
+
+if ! command -v tcpdump >/dev/null 2>&1 || [ "$(id -u)" -ne 0 ]; then
+	for id in T-601 T-602 T-603; do
+		report "$id" "probe protocol on the wire" skip "needs tcpdump and root"
+	done
+else
+	tcpdump -i any -n -c 12 'udp portrange 33434-33500 or icmp' > "$WIRE" 2>/dev/null &
+	td=$!
+	sleep 2
+	timeout -s INT 12s "$BIN" -m 2 "${TEST_HOST:-8.8.8.8}" >/dev/null 2>&1
+	sleep 2
+	kill "$td" 2>/dev/null
+	wait "$td" 2>/dev/null
+
+	# Probes are UDP and the destination port steps by one per probe, starting
+	# at the base port -- that stepping port is what match_probe keys on.
+	if grep -qE '\.33434: UDP' "$WIRE" && grep -qE '\.33435: UDP' "$WIRE"; then
+		report T-601 "UDP probes leave on 33434 and step per probe" pass
+	else
+		report T-601 "UDP probes leave on 33434 and step per probe" fail "$(head -2 "$WIRE" | tr '\n' '|')"
+	fi
+
+	# 60-byte packet claim in the banner: 20 IP + 8 UDP + 32 payload.
+	if grep -qE 'UDP, length 32' "$WIRE"; then
+		report T-602 "UDP payload is 32 bytes, matching the 60-byte banner" pass
+	else
+		report T-602 "UDP payload is 32 bytes, matching the 60-byte banner" fail "$(grep -m1 'UDP' "$WIRE")"
+	fi
+
+	# The destination itself answers with port unreachable, which is what ends
+	# the trace. The loopback gives that deterministically.
+	tcpdump -i any -n -c 6 'icmp' > "$WIRE.2" 2>/dev/null &
+	td2=$!
+	sleep 2
+	timeout -s INT 10s "$BIN" -q 1 127.0.0.1 >/dev/null 2>&1
+	sleep 1
+	kill "$td2" 2>/dev/null
+	wait "$td2" 2>/dev/null
+	if grep -qiE 'port 334[0-9]+ unreachable' "$WIRE.2"; then
+		report T-603 "destination replies port unreachable, ending the trace" pass
+	else
+		report T-603 "destination replies port unreachable, ending the trace" fail "$(head -2 "$WIRE.2" | tr '\n' '|')"
+	fi
+fi
+
+# ---------------------------------------------------------------------------
 # T-7xx — output format. Needs a live trace, so it is gated on privileges.
 # ---------------------------------------------------------------------------
 printf -- '\n--- T-7xx output format\n'
