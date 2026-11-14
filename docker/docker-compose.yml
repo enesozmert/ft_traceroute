@@ -1,0 +1,58 @@
+# =============================================================================
+# ft_traceroute — docker-compose.yml
+# Subject: Ecole 42 ft_traceroute v5.1
+# Note: ICMP raw socket için CAP_NET_RAW capability gerekli.
+# =============================================================================
+
+services:
+  ft_traceroute:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: ft_traceroute:latest
+    container_name: ft_traceroute_container
+    hostname: ft-traceroute
+
+    # ICMP raw socket için zorunlu capability'ler
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+
+    # Linux kernel için ping group range (daha geniş uyumluluk için 0-65535)
+    sysctls:
+      net.ipv4.ping_group_range: "0 65535"
+
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+    # SSH (development only)
+    ports:
+      - "2222:22"
+
+    # Bind mount: host'taki kaynak kodu container'a canlı bağlar
+    volumes:
+      - ..:/usr/src/ft_traceroute
+
+    working_dir: /usr/src/ft_traceroute
+
+    # Ortam değişkenleri (Makefile/CMake değişkenleri override için)
+    environment:
+      - TERM=xterm-256color
+      - LANG=C.UTF-8
+
+    networks:
+      - ft_traceroute_net
+
+    # Health check — container içinde build chain çalışıyor mu?
+    healthcheck:
+      test: ["CMD-SHELL", "command -v gcc >/dev/null && command -v make >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+networks:
+  ft_traceroute_net:
+    driver: bridge
+    name: ft_traceroute_net
