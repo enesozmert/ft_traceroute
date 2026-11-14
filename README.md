@@ -14,6 +14,8 @@
 
 - [Genel Bakış](#genel-bakış)
 - [Hızlı Başlangıç](#hızlı-başlangıç)
+- [Makefile Hedefleri](#makefile-hedefleri)
+- [Doğrulama VM'i](#doğrulama-vmi)
 - [Nasıl Çalışır](#nasıl-çalışır)
 - [Quality Gates](#quality-gates)
 - [Proje Yapısı](#proje-yapısı)
@@ -61,7 +63,7 @@ make
 
 ```bash
 make
-sudo setcap cap_net_raw+ep output/ft_traceroute   # bir kez
+sudo setcap cap_net_raw+ep output/ft_traceroute   # bir kez; ya da sudo ile çalıştır
 ./output/ft_traceroute google.com
 ./output/ft_traceroute --help
 
@@ -73,6 +75,12 @@ sudo setcap cap_net_raw+ep output/ft_traceroute   # bir kez
 
 Raw ICMP socket root veya `CAP_NET_RAW` ister; UDP gönderim socket'i istemez.
 
+> **Not:** `make` yetkiyi **otomatik vermez**. Bu bilinçli: capability taşıyan bir
+> dosyayı valgrind çalıştırmayı reddeder (`Can't execute setuid/setgid/setcap
+> executable`), yani otomatik `setcap` kalite kapılarından birini sessizce
+> kapatıyordu. Yetki yalnızca `make setcap` ile veriliyor; `make valgrind` de
+> çalışmadan önce kalmış capability'yi `setcap -r` ile temizliyor.
+
 ### Örnek çıktı
 
 ```
@@ -80,6 +88,133 @@ traceroute to 8.8.8.8 (8.8.8.8), 30 hops max, 60 byte packets
  1  172.23.0.1  0.545 ms  0.466 ms  0.429 ms
  2  * * *
 ```
+
+---
+
+## Makefile Hedefleri
+
+### Subject zorunlu
+
+| Hedef | İş |
+|-------|-----|
+| `make` / `make all` | `output/ft_traceroute` üretir |
+| `make clean` | `.o` ve `.d` dosyalarını siler |
+| `make fclean` | `clean` + executable ve `output/` siler |
+| `make re` | `fclean` + `all` |
+
+### Çalıştırma
+
+| Hedef | İş |
+|-------|-----|
+| `make run ARGS="8.8.8.8" SUDO=1` | binary'yi argümanlarla çalıştırır |
+| `make setcap` | `CAP_NET_RAW` verir (sudo ister) — build bunu otomatik yapmaz |
+
+### Kalite
+
+| Hedef | İş |
+|-------|-----|
+| `make norm` | Ecole 42 norminette |
+| `make cppcheck` | cppcheck statik analiz → `cppcheck.txt` |
+| `make misra` | MISRA C:2012 addon → `misra.txt` |
+| `make strict` | `-Wpedantic -Wshadow -Wconversion -Wcast-align -Wstrict-prototypes` ile yeniden derler |
+| `make asan` | AddressSanitizer build |
+
+### Test
+
+| Hedef | İş |
+|-------|-----|
+| `make test` | 50 case'lik suite; yetki yoksa ağ case'leri SKIP |
+| `make test-net NET_HOST=8.8.8.8` | canlı trace testi (root/`CAP_NET_RAW` ister) |
+| `make test-net-docker` | aynısını container içinde koşar |
+| `make valgrind` | leak/hata taraması; önce capability'yi temizler |
+| `make diff-ref DIFF_HOST=8.8.8.8` | gerçek `traceroute -n` ile layout diff'i |
+
+### Diğer
+
+| Hedef | İş |
+|-------|-----|
+| `make cmake-build` | CMake ile `build/` altında derler |
+| `make cmake-clean` | `build/` siler |
+| `make help` | tüm hedefleri listeler |
+
+Ortam değişkenleri: `NET_HOST`, `NET_TIMEOUT`, `DIFF_HOST`, `VALGRIND_HOST`,
+`CONTAINER`, `ARGS`, `SUDO`.
+
+---
+
+## Doğrulama VM'i
+
+Subject değerlendirmenin **Linux kernel ≥ 4.0** olan bir VM'de yapılacağını
+söylüyor. `vm/` klasörü o VM'i tek komutla, **arayüzsüz (headless)** kurar.
+
+### Yeni bir makinede sıfırdan
+
+```bash
+# 1. host araçları
+#    macOS:          brew install --cask virtualbox && brew install qemu
+#    Debian/Ubuntu:  sudo apt install virtualbox qemu-utils genisoimage
+#    Fedora:         sudo dnf install VirtualBox qemu-img xorriso
+
+# 2. VM'i kur ve başlat (ilk sefer ~5-10 dk: ~400 MB Debian image indirir,
+#    VDI'ya çevirir, cloud-init paketleri kurar)
+sh vm/create-vm.sh
+
+# 3. script en sonda bağlantı bilgisini basar:
+#      ssh -i ~/vm/ft_traceroute/id_vm -p 2222 tester@127.0.0.1
+#    altında ~/.ssh/config'e yapıştırılacak hazır blok da var
+
+# 4. testleri VM'de koş
+sh vm/run-tests.sh          # test suite        -> 50/50 bekleniyor
+sh vm/run-tests.sh gates    # + norminette / strict / valgrind / diff-ref
+```
+
+**SSH anahtarı repoda yok** — olmamalı da. Script her makinede kendi
+`~/vm/ft_traceroute/id_vm` anahtarını üretir.
+
+Script tekrar çalıştırılabilir: VM kuruluysa yeniden kurmaz, kapalıysa başlatır,
+çalışıyorsa sadece bağlantı bilgisini basar.
+
+### Günlük kullanım
+
+```bash
+sh vm/create-vm.sh                        # başlat / bilgiyi yeniden bas
+ssh -i ~/vm/ft_traceroute/id_vm -p 2222 tester@127.0.0.1
+VBoxManage controlvm ft-tr-vm poweroff    # durdur
+sh vm/create-vm.sh destroy                # VM'i ve diskini sil
+```
+
+İlk koşudan hemen sonra `vm/run-tests.sh` paket eksikliğinden patlarsa
+cloud-init hâlâ kuruyordur; bir kez bekle:
+
+```bash
+ssh -i ~/vm/ft_traceroute/id_vm -p 2222 tester@127.0.0.1 'sudo cloud-init status --wait'
+```
+
+### Ayarlar
+
+```bash
+SSH_PORT=2345 MEMORY=8192 CPUS=8 DISK_MB=20480 sh vm/create-vm.sh
+ARCH=amd64 sh vm/create-vm.sh          # mimariyi zorla (varsayılan: host'unki)
+VM_NAME=ft-tr-2 sh vm/create-vm.sh     # ikinci bir VM
+BRIDGE="enp0s31f6" sh vm/create-vm.sh  # bridged ağ — çok hop'lu trace için
+```
+
+### Ne kuruluyor
+
+| Alan | Değer |
+|------|-------|
+| Guest | Debian 13 (trixie) cloud image, host mimarisine göre arm64 / amd64 |
+| Kernel | 6.12.x — subject şartı ≥ 4.0 |
+| CPU / RAM / Disk | 4 vCPU / 4096 MB / 12 GB (env ile değişir) |
+| Ağ | NAT + `127.0.0.1:2222 -> 22` (veya `BRIDGE=` ile bridged) |
+| Kullanıcı | `tester`, passwordless sudo, SSH anahtarıyla |
+| Araçlar | gcc, make, traceroute, tcpdump, valgrind, cppcheck, norminette |
+
+**VM image'ı repoda değil:** `disk.vdi` 1,3 GB ve GitHub dosya başına 100 MB
+sınırı koyuyor. Repoda **tarif** var — resmi Debian image'ından aynı makineyi
+üretir, repo 6 MB kalır.
+
+Koşu raporu: [`docs/report/vm-test-report.md`](docs/report/vm-test-report.md)
 
 ---
 
@@ -118,16 +253,26 @@ Protokol seçiminin subject'ten nasıl türetildiği: [`docs/sdd/SDD.md`](docs/s
 ### Test suite (`make test`)
 
 ```
-50 passed, 0 failed, 0 skipped
-
-T-5xx  CLI kontratı (--help, argümansız, geçersiz opsiyon, iki hedef, bilinmeyen host)
-T-7xx  banner layout, hop satırı layout, reverse DNS yok,
-       gerçek traceroute ile layout birebir aynı
-T-8xx  bonus flag doğrulaması (aralık, eksik değer, sondaki çöp karakter, --help metni)
-T-82x  bonus flag'lerin canlı trace üzerindeki etkisi
+50 passed, 0 failed, 0 skipped        # root ile (Docker veya VM)
+32 passed, 0 failed, 18 skipped       # yetkisiz host'ta — ağ case'leri atlanır
 ```
 
-T-7xx ve T-82x case'leri root/`CAP_NET_RAW` ister; yetki yoksa SKIP raporlanır.
+| Grup | Kapsam | Adet |
+|------|--------|------|
+| T-1xx | Executable adı, Makefile kuralları, `fclean`/`re` gerçekten çalışıyor mu | 7 |
+| T-2xx | `O_NONBLOCK` / `fcntl` / `system` / `exec*` / `popen` yok, libC-only link | 4 |
+| T-5xx | CLI kontratı, IPv4 ve FQDN girişi, hata yolları ve exit kodları | 10 |
+| T-6xx | **Wire üzerinde protokol** (`tcpdump`): UDP 33434+ adımlama, 32 bayt payload, port unreachable | 3 |
+| T-7xx | Banner, hop satırı, reverse DNS yok, layout, hop numaraları, durma, SIGINT, ±30 ms | 9 |
+| T-8xx | Bonus flag doğrulaması ve `--help` metni | 12 |
+| T-82x | Bonus flag'lerin canlı trace üzerindeki etkisi | 5 |
+
+T-6xx / T-7xx / T-82x root veya `CAP_NET_RAW` ister (T-6xx ayrıca `tcpdump`);
+yetki yoksa **SKIP** raporlanır — sessizce PASS olmaz.
+
+Testlerin karşılaştırdığı referans kayıtlar [`test/fixtures/`](test/fixtures/)
+altında: gerçek `traceroute` çıktısı, `tcpdump` ile yakalanmış UDP probe'ları ve
+ICMP port unreachable yanıtı.
 
 ### Strict build
 
@@ -139,10 +284,13 @@ T-7xx ve T-82x case'leri root/`CAP_NET_RAW` ister; yetki yoksa SKIP raporlanır.
 ### Valgrind
 
 ```
-7/7 path: 0 errors, 0 leaks
-(--help, bilinmeyen host, argümansız, -m 0, -m değersiz, -q 99,
- canlı trace -m 2 --resolve + SIGINT)
+0 errors, 0 leaks — her yolda
+(--help, bilinmeyen host, argümansız, -m 0, değersiz -m, -q 99,
+ ve SIGINT ile kesilen canlı -m 2 --resolve trace'i)
 ```
+
+`make valgrind` çalışmadan önce binary'deki capability'yi temizler; aksi hâlde
+valgrind dosyayı çalıştırmayı reddeder.
 
 ### Cppcheck
 
@@ -196,7 +344,14 @@ ft_traceroute/
 │
 ├── hdr/header.h             # merkezi header: wire struct'lar + prototipler
 │
-├── test/run_tests.sh        # T-5xx / T-7xx test harness
+├── test/
+│   ├── run_tests.sh         # T-1xx … T-82x test harness (50 case)
+│   └── fixtures/            # referans çıktılar + tcpdump kayıtları
+│
+├── vm/                      # doğrulama VM'i (headless VirtualBox)
+│   ├── create-vm.sh         # Debian 13 cloud image'dan VM kurar ve başlatır
+│   ├── run-tests.sh         # projeyi VM'e senkronlar, suite'i root ile koşar
+│   └── README.md
 │
 ├── docker/
 │   ├── Dockerfile           # Ubuntu 22.04, builder/runtime/dev
@@ -205,12 +360,16 @@ ft_traceroute/
 ├── opt/norm_autofix.py      # Norminette mekanik düzeltici
 │
 └── docs/
-    ├── main/en.subject.pdf  # subject (resmi)
-    ├── sdd/SDD.md           # tasarım dokümanı — kodlamadan önce yazıldı
-    ├── rules/               # 8 kural seti (subject, norm, MISRA, docker, protokol…)
-    ├── command/             # OS/build komut referansları
-    ├── tasks/TASKS.md       # faz bazlı görev listesi
-    └── report/              # durum raporu
+    ├── main/en.subject.pdf              # subject (resmi)
+    ├── sdd/SDD.md                       # tasarım dokümanı — kodlamadan önce yazıldı
+    ├── rules/                           # 8 kural seti (subject, norm, MISRA, docker, protokol…)
+    ├── command/                         # OS/build komut referansları
+    ├── tasks/TASKS.md                   # faz bazlı görev listesi
+    ├── report/report.md                 # durum raporu + savunma Q&A
+    ├── report/vm-test-report.md         # VM koşu raporu
+    └── presentation/
+        ├── ft_traceroute-overview.pdf   # 3 sayfa A4 yatay özet
+        └── PROJE-ANLATIMI.md            # savunma için hap bilgi kartı
 ```
 
 ---
@@ -220,10 +379,16 @@ ft_traceroute/
 | Konu | Dosya |
 |------|-------|
 | Subject (resmi PDF) | [`docs/main/en.subject.pdf`](docs/main/en.subject.pdf) |
+| **Anlatım kartı (savunma)** | [`docs/presentation/PROJE-ANLATIMI.md`](docs/presentation/PROJE-ANLATIMI.md) |
+| **Genel bakış PDF'i (3 sayfa)** | [`docs/presentation/ft_traceroute-overview.pdf`](docs/presentation/ft_traceroute-overview.pdf) |
 | Tasarım dokümanı (SDD) | [`docs/sdd/SDD.md`](docs/sdd/SDD.md) |
 | Subject kuralları | [`docs/rules/01-subject-rules.md`](docs/rules/01-subject-rules.md) |
 | Ağ protokolü | [`docs/rules/08-network-protocol.md`](docs/rules/08-network-protocol.md) |
 | Görev listesi | [`docs/tasks/TASKS.md`](docs/tasks/TASKS.md) |
+| Durum raporu + savunma Q&A | [`docs/report/report.md`](docs/report/report.md) |
+| VM koşu raporu | [`docs/report/vm-test-report.md`](docs/report/vm-test-report.md) |
+| Doğrulama VM'i | [`vm/README.md`](vm/README.md) |
+| Test referans kayıtları | [`test/fixtures/`](test/fixtures/) |
 | Komut referansı | [`docs/command/COMMAND.md`](docs/command/COMMAND.md) |
 | Norminette | [`docs/rules/02-norminette.md`](docs/rules/02-norminette.md) |
 | Docker | [`docs/rules/04-docker-standards.md`](docs/rules/04-docker-standards.md) |
@@ -232,15 +397,43 @@ ft_traceroute/
 
 ## Sınırlar & Bilinen Sorunlar
 
-- **IPv6 desteği yok** — subject yalnızca IPv4 zorunlu kılar.
-- **Bonus:** `-m` `-q` `-p` `-w` ve `--resolve` eklendi (5/5). `-i` `-s` `-t`
-  `-l` `-N` eklenmedi — subject en fazla 5 bonus sayıyor.
-- **Docker bridge ağı** hop 1'den sonrasını NAT arkasında gizler; çok hop'lu
-  gerçek bir yol için native Linux veya host network gerekir. Çıktı düzeni
-  doğrulaması bundan etkilenmez (T-704 üretilen hop sayısı kadar karşılaştırır).
-- **macOS native build** derlenir, ancak raw ICMP socket root ister ve BSD
-  davranışı Debian değerlendirme ortamından sapabilir; Docker önerilir.
-- **ICMP code anotasyonları** (`!H`, `!N`, `!X`) mandatory kapsamında değil.
+### Kapsam dışı bırakılanlar
+
+- **IPv6 yok** — subject yalnızca IPv4 zorunlu kılıyor.
+- **Bonus 5/5 dolu:** `-m` `-q` `-p` `-w` ve `--resolve`. `-i` `-s` `-t` `-l`
+  `-N` eklenmedi — subject en fazla 5 bonus sayıyor.
+- **ICMP code anotasyonları** (`!H` `!N` `!X`) mandatory kapsamında değil ve
+  bonus kotası dolu olduğu için eklenmedi.
+
+### Çok hop'lu gerçek yol — açık tek madde (T-1004)
+
+NAT'lı ortamlarda **gerçek `traceroute` de** hop 1'den sonrasını göremiyor: NAT
+katmanı upstream router'ların ICMP Time Exceeded mesajlarını iletmiyor. Hem
+Docker Desktop hem VirtualBox NAT'ında aynı. Yani davranış paritesi gösterilmiş
+durumda; eksik olan ortam, kod değil.
+
+Kapatmak için VM'in gerçek bir LAN adresi olması gerekir:
+
+```bash
+BRIDGE="enp0s31f6" sh vm/create-vm.sh   # arayüz adı: ip link / VBoxManage list bridgedifs
+sh vm/run-tests.sh
+# veya doğrudan: make test-net NET_HOST=8.8.8.8
+```
+
+macOS'ta Wi-Fi üzerinden bridge çalışmıyor — vmnet
+`vmnet_start_interface returned 1001` ile reddediyor. Kablolu arayüz gerekiyor.
+
+Çıktı düzeni doğrulaması bundan etkilenmiyor: T-704 loopback üzerinde birebir
+diff alıyor, T-709 uzak trace'in her satırını referans gramerine göre denetliyor.
+
+### Ortam notları
+
+- **macOS native build** derleniyor, ancak raw ICMP socket root istiyor ve BSD
+  davranışı Debian değerlendirme ortamından sapabilir — Docker veya `vm/` önerilir.
+- **`make` yetki vermiyor:** raw socket için `make setcap` veya `sudo` gerekiyor
+  (gerekçe [Hızlı Başlangıç](#hızlı-başlangıç) bölümünde).
+- **Yetkisiz host'ta** `make test` 18 case'i SKIP olarak raporluyor; bu bir hata
+  değil, yanlış yeşil vermemek için.
 
 ---
 
