@@ -2,7 +2,7 @@
 
 > Tarih: 2026-11-14
 > Subject: Ecole 42 `ft_traceroute` v5.0
-> Commit: `933c2e0` mandatory + bonus (Faz 9)
+> Commit: `933c2e0` mandatory, `4373ce9` bonus (Faz 9)
 
 ---
 
@@ -53,8 +53,10 @@ Maksimum sapma < 2 ms. Subject toleransı ±30 ms.
 ```
 grep -r O_NONBLOCK src/ hdr/            -> boş
 grep -rE 'system\(|execv|popen' src/    -> boş
-grep -r getnameinfo src/ hdr/           -> boş
 ```
+
+`getnameinfo` yalnızca `src/resolve_hops.c` içinde ve yalnızca `--resolve`
+verildiğinde çağrılır; mandatory yolda erişilmez. Güvence testi T-703.
 
 ### Bonus — mandatory regresyonu yok
 
@@ -72,8 +74,8 @@ $ ft_traceroute --resolve 127.0.0.1
 ### Bellek güvenliği
 
 7 yol valgrind altında koşuldu — `--help`, bilinmeyen host, argümansız,
-geçersiz flag ve SIGINT ile kesilen canlı trace. Hepsinde
-`ERROR SUMMARY: 0 errors`, leak yok.
+`-m 0`, değersiz `-m`, `-q 99` ve SIGINT ile kesilen `-m 2 --resolve` canlı
+trace. Hepsinde `ERROR SUMMARY: 0 errors`, leak yok.
 
 ---
 
@@ -127,7 +129,7 @@ eder, döngü normal yoldan döner ve kaynaklar tek seferde serbest bırakılır
 | Konu | Etki | Plan |
 |------|------|------|
 | Docker bridge hop 1'den sonrasını NAT'lıyor | Çok hop'lu gerçek yol container'da görülemiyor; format doğrulaması etkilenmiyor | Native Linux VM'de son doğrulama (T-1003, T-1004) |
-| ICMP code anotasyonları (`!H` `!N` `!X`) yok | Mandatory kapsamı dışında | Bonus ile birlikte |
+| ICMP code anotasyonları (`!H` `!N` `!X`) yok | Mandatory kapsamı dışında | Bonus kotası dolu, eklenmedi |
 | `-i` `-s` `-t` `-l` `-N` yok | Subject en fazla 5 bonus sayıyor, kota dolu | — |
 | IPv6 yok | Subject IPv4 zorunlu kılıyor | Kapsam dışı |
 

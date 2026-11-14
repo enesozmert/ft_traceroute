@@ -2,7 +2,7 @@
 
 > Subject: [`docs/main/en.subject.pdf`](../main/en.subject.pdf) (Ecole 42, ft_traceroute v5.0)
 > Reference behaviour: Debian `traceroute(8)` (LBL / Dmitry Butskoy implementation)
-> Status: v1.0 — written before the first line of implementation (design-first, test-first)
+> Status: v1.1 — §1-§8 written before the first line of implementation; §9 added with the bonus
 
 ---
 
@@ -14,9 +14,9 @@
 |----|-------------|-----------------|
 | R-01 | Executable named `ft_traceroute` | `Makefile` builds `output/ft_traceroute`, binary name exact |
 | R-02 | C + Makefile with the usual rules | `all clean fclean re` present, plus quality targets |
-| R-03 | Only option to manage: `--help` | `parse_args` accepts `--help` and nothing else |
+| R-03 | Only option to manage: `--help` | `parse_args` accepts `--help`; every other `-` argument is an error unless it is a bonus flag (§9.1) |
 | R-04 | One IPv4 address **or** hostname parameter | exactly one positional argument, more is an error |
-| R-05 | Manage FQDN, but **no DNS resolution in the hop display** | forward resolution once at startup; hop lines print the raw IP, never `getnameinfo` |
+| R-05 | Manage FQDN, but **no DNS resolution in the hop display** | forward resolution once at startup; hop lines print the raw IP, and `getnameinfo` is unreachable without the bonus `--resolve` flag (§9.2) |
 | R-06 | ±30 ms tolerance per hop | RTT measured with `gettimeofday` around each probe |
 | R-07 | Sockets must **not** be `O_NONBLOCK` | both sockets stay blocking; waiting is done with `select(2)` |
 | R-08 | libC only | no third-party dependency; `-lm` only for the standard math library |
@@ -77,7 +77,9 @@ One public function per source file (norm rule), no module reaching into another
 
 ```
 main.c                 argv -> parse_args -> trace_init -> trace_loop -> trace_cleanup
-parse_args.c           --help only, one positional destination, exit codes
+options_init.c         the mandatory defaults, before any flag is read
+parse_args.c           --help, one positional destination, exit codes
+parse_option.c         bonus flag table, range and whole-string validation
 print_usage.c          usage text on stdout (--help) or stderr (misuse)
 resolve_hostname.c     getaddrinfo, AF_INET, first result wins
 
@@ -92,10 +94,10 @@ wait_reply.c           select() on the raw socket with the remaining deadline
 recv_reply.c           recvfrom, classify the ICMP type/code, fill t_probe
 match_probe.c          inner IP + UDP parse, port comparison
 
+resolve_hops.c         bonus: opt-in reverse DNS, no-op without --resolve
 print_banner.c         "traceroute to HOST (IP), N hops max, M byte packets"
-print_hop.c            one line per hop, "*" per lost probe, no reverse DNS
+print_hop.c            one line per hop, "*" per lost probe, numeric by default
 
-checksum.c             RFC 1071 (kept for the bonus ICMP probe mode)
 compute_elapsed_ms.c   timeval helpers: elapsed, deadline add, remaining
 interrupt_handler.c    sets g_interrupted only — async-signal-safe
 trace_cleanup.c        closes both sockets, frees the payload
@@ -108,7 +110,7 @@ runs the program and never returns — `free_ping()` in `main` is dead code. ft_
 the three phases separate and returns through all of them:
 
 ```
-trace_init(&tr, dest)  ->  trace_loop(&tr)  ->  trace_cleanup(&tr)  ->  return status
+trace_init(&tr, dest, &opt)  ->  trace_loop(&tr)  ->  trace_cleanup(&tr)  ->  status
 ```
 
 `ft_ping` also calls `printf` and `exit` from inside the `SIGINT` handler, which is not
@@ -120,13 +122,15 @@ nothing else; `trace_loop` checks it between probes and returns normally.
 ## 4. Data model
 
 ```c
-t_probe       state (TIMEOUT|TRANSIT|FINAL), sent_at, rtt, from_addr, from_str
-t_options     max_hops=30, nprobes=3, base_port=33434, packet_len=60, probe_timeout=5
-t_traceroute  send_fd, recv_fd, dest_arg, dest_ip, target, opt, probes[3],
-              payload, payload_len, ident, reached
+t_probe       state (TIMEOUT|TRANSIT|FINAL), sent_at, rtt, from_addr,
+              from_str, host_str (empty unless --resolve resolved it)
+t_options     max_hops=30, nprobes=3, base_port=33434, packet_len=60,
+              probe_timeout=5, resolve_dns=0
+t_traceroute  send_fd, recv_fd, dest_arg, dest_ip, target, opt,
+              probes[TR_MAX_PROBES], payload, payload_len, ident, reached
 ```
 
-`t_traceroute` is a single stack object in `main`. There is no global state apart from
+`t_traceroute` and `t_options` are single stack objects in `main`. There is no global state apart from
 `g_interrupted`, so there is no ownership question and nothing to leak on an early return.
 
 Wire structs (`t_iphdr`, `t_icmphdr`, `t_udphdr`) are declared locally rather than taken from
@@ -152,7 +156,8 @@ Rules taken from the reference implementation:
 - Within one hop, an address is printed only when it differs from the previous probe's address.
 - Each RTT is `%.3f ms`, separated from the previous field by two spaces.
 - A probe with no reply prints `*`, separated by a single space.
-- The hop display never performs reverse DNS (subject R-05), so it matches `traceroute -n`.
+- The hop display performs no reverse DNS by default (subject R-05), so it matches `traceroute -n`.
+  With the bonus `--resolve` flag the source becomes `name (addr)`, as the reference prints it.
 
 Byte-exact confirmation is not assumed — `make diff-ref` normalises every digit to `N` in both
 our output and the real `traceroute` output and diffs the result, so any layout drift shows up
@@ -196,6 +201,9 @@ No implementation file is written before a test for it fails. Test IDs:
 | T-702 | format | hop line matches `^[ ]*[0-9]+  (\*|[0-9.]+)` |
 | T-703 | format | no hop line contains a hostname (no reverse DNS) |
 | T-704 | format | digit-normalised layout equals the real `traceroute` layout |
+| T-801…T-807 | bonus | out-of-range, missing and malformed flag values are rejected |
+| T-808…T-812 | bonus | `--help` documents every bonus flag |
+| T-820…T-824 | bonus | each flag changes the live trace as specified |
 
 `test/cli.sh` and `test/format.sh` run from `make test`; the network-dependent cases run from
 `make test-net` inside the Docker container, where CAP_NET_RAW is available.
