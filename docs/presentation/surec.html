@@ -1,0 +1,656 @@
+<title>ft_traceroute Süreç Anlatımı</title>
+<style>
+  @page { size: A4 landscape; margin: 9mm; }
+
+  :root {
+    --ink:    #16181d;
+    --soft:   #5b6270;
+    --line:   #d8dce4;
+    --paper:  #ffffff;
+    --tint:   #f4f6f9;
+    --blue:   #2563a8;
+    --blueb:  #e3edf8;
+    --green:  #1d7a4f;
+    --greenb: #e2f2e9;
+    --red:    #bf3b2b;
+    --redb:   #fbe8e4;
+    --amber:  #9a6a07;
+    --amberb: #fbf0db;
+    --violet: #6b4b9a;
+    --violetb:#eee8f7;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+    font-size: 11.6pt;
+    line-height: 1.5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  section {
+    page-break-after: always;
+    height: 190mm;
+    display: flex;
+    flex-direction: column;
+  }
+  section:last-child { page-break-after: auto; }
+
+  /* ---------- page head ---------- */
+  .head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 16px; border-bottom: 1.5px solid var(--ink); padding-bottom: 5px;
+  }
+  .head h1 { margin: 0; font-size: 22pt; letter-spacing: -.3pt; }
+  .head .meta {
+    font-size: 8.5pt; color: var(--soft); letter-spacing: .6pt;
+    text-transform: uppercase; white-space: nowrap;
+  }
+  .lede { margin: 8px 0 0; font-size: 11pt; color: var(--soft); max-width: 230mm; }
+
+  .body { flex: 1; min-height: 0; padding-top: 12px; }
+
+  /* ---------- generic blocks ---------- */
+  .cols  { display: grid; gap: 12px; }
+  .c2    { grid-template-columns: 1fr 1fr; }
+  .c3    { grid-template-columns: 1fr 1fr 1fr; }
+  .c21   { grid-template-columns: 1.35fr 1fr; }
+
+  .card {
+    border: 1px solid var(--line); border-radius: 4px;
+    padding: 12px 14px; background: var(--paper);
+  }
+  .card.tint { background: var(--tint); }
+  .card h3 {
+    margin: 0 0 5px; font-size: 12pt; letter-spacing: -.1pt;
+  }
+  .card p { margin: 0 0 5px; }
+  .card p:last-child { margin-bottom: 0; }
+
+  .kicker {
+    font-size: 8.5pt; letter-spacing: 1pt; text-transform: uppercase;
+    color: var(--soft); margin: 0 0 4px; font-weight: 600;
+  }
+
+  code, .mono {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10pt;
+  }
+  code { background: var(--tint); padding: 0 3px; border-radius: 2px; }
+
+  pre {
+    margin: 0; padding: 7px 9px; background: #1d2129; color: #e8ecf2;
+    border-radius: 4px; font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 9.4pt; line-height: 1.55; overflow: hidden;
+  }
+  pre b { color: #8fd3a8; font-weight: 600; }
+  pre i { color: #f0b36b; font-style: normal; }
+
+  .pill {
+    display: inline-block; padding: 2px 8px; border-radius: 9px;
+    font-size: 8.5pt; font-weight: 600; letter-spacing: .3pt;
+  }
+  .p-blue   { background: var(--blueb);   color: var(--blue); }
+  .p-green  { background: var(--greenb);  color: var(--green); }
+  .p-red    { background: var(--redb);    color: var(--red); }
+  .p-amber  { background: var(--amberb);  color: var(--amber); }
+  .p-violet { background: var(--violetb); color: var(--violet); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 10.6pt; }
+  th {
+    text-align: left; font-size: 8.5pt; letter-spacing: .7pt;
+    text-transform: uppercase; color: var(--soft);
+    border-bottom: 1px solid var(--line); padding: 3px 6px 3px 0;
+  }
+  td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+
+  .foot {
+    margin-top: 6px; padding-top: 5px; border-top: 1px solid var(--line);
+    font-size: 8pt; color: var(--soft);
+  }
+
+  svg { display: block; width: 100%; height: auto; }
+
+  .big { font-size: 30pt; font-weight: 700; line-height: 1; letter-spacing: -.5pt; }
+  .biglabel { font-size: 9.5pt; color: var(--soft); margin-top: 2px; }
+
+  td:first-child { white-space: nowrap; }
+  .wrapcell td:first-child { white-space: normal; }
+
+  /* page 6 carries six fault cards plus a summary row; it needs tighter type */
+  .compact { font-size: 10.4pt; }
+  .compact .card { padding: 9px 11px; }
+  .compact .card p { margin-bottom: 4px; }
+  .compact .kicker { font-size: 8pt; margin-bottom: 3px; }
+  .compact code { font-size: 9pt; }
+
+  ul.plain { margin: 0; padding-left: 15px; }
+  ul.plain li { margin-bottom: 3px; }
+</style>
+
+<!-- ======================================================= PAGE 1 ========= -->
+<section>
+  <div class="head">
+    <h1>ft_traceroute — bu program ne yapıyor?</h1>
+    <div class="meta">Ecole 42 · Süreç anlatımı · 1 / 6</div>
+  </div>
+  <p class="lede">
+    En baştan, en sade haliyle. Önce programın ne işe yaradığı, sonra nasıl
+    yazıldığı, sonra yolda nelerin patladığı ve nasıl düzeltildiği.
+  </p>
+
+  <div class="body">
+    <div class="cols c21" style="height:100%">
+      <div>
+        <p class="kicker">Günlük hayattan benzetme</p>
+        <svg viewBox="0 0 560 300" role="img" aria-label="Kargo benzetmesi">
+          <!-- ev -->
+          <rect x="8" y="118" width="74" height="54" rx="5" fill="#e3edf8" stroke="#2563a8" stroke-width="1.5"/>
+          <polygon points="45,96 6,120 84,120" fill="#2563a8"/>
+          <text x="45" y="150" font-size="12" font-weight="700" fill="#16181d" text-anchor="middle">SEN</text>
+          <text x="45" y="165" font-size="9" fill="#5b6270" text-anchor="middle">bilgisayarın</text>
+
+          <!-- duraklar -->
+          <g>
+            <circle cx="170" cy="145" r="24" fill="#f4f6f9" stroke="#5b6270" stroke-width="1.5"/>
+            <text x="170" y="143" font-size="11" font-weight="700" text-anchor="middle" fill="#16181d">1</text>
+            <text x="170" y="155" font-size="7.5" text-anchor="middle" fill="#5b6270">modem</text>
+
+            <circle cx="268" cy="145" r="24" fill="#f4f6f9" stroke="#5b6270" stroke-width="1.5"/>
+            <text x="268" y="143" font-size="11" font-weight="700" text-anchor="middle" fill="#16181d">2</text>
+            <text x="268" y="155" font-size="7.5" text-anchor="middle" fill="#5b6270">operatör</text>
+
+            <circle cx="366" cy="145" r="24" fill="#f4f6f9" stroke="#5b6270" stroke-width="1.5"/>
+            <text x="366" y="143" font-size="11" font-weight="700" text-anchor="middle" fill="#16181d">3</text>
+            <text x="366" y="155" font-size="7.5" text-anchor="middle" fill="#5b6270">ara hat</text>
+          </g>
+
+          <!-- hedef -->
+          <rect x="446" y="118" width="100" height="54" rx="5" fill="#e2f2e9" stroke="#1d7a4f" stroke-width="1.5"/>
+          <text x="496" y="142" font-size="12" font-weight="700" fill="#16181d" text-anchor="middle">google.com</text>
+          <text x="496" y="157" font-size="9" fill="#5b6270" text-anchor="middle">hedef</text>
+
+          <!-- oklar -->
+          <g stroke="#9aa3b2" stroke-width="1.5" fill="none" marker-end="url(#ar)">
+            <line x1="86" y1="145" x2="142" y2="145"/>
+            <line x1="196" y1="145" x2="240" y2="145"/>
+            <line x1="294" y1="145" x2="338" y2="145"/>
+            <line x1="392" y1="145" x2="442" y2="145"/>
+          </g>
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0 0 L10 5 L0 10 z" fill="#9aa3b2"/>
+            </marker>
+          </defs>
+
+          <text x="278" y="44" font-size="12.5" font-weight="700" text-anchor="middle" fill="#16181d">
+            İnternette hiçbir veri hedefe doğrudan gitmez.
+          </text>
+          <text x="278" y="64" font-size="11" text-anchor="middle" fill="#5b6270">
+            Kargo gibi, duraktan durağa aktarılır. Bu duraklara <tspan font-weight="700" fill="#16181d">hop</tspan> denir.
+          </text>
+
+          <rect x="92" y="208" width="376" height="62" rx="5" fill="#fbf0db" stroke="#9a6a07" stroke-width="1.2"/>
+          <text x="280" y="230" font-size="11.5" font-weight="700" text-anchor="middle" fill="#16181d">
+            ft_traceroute bu durakları tek tek listeler.
+          </text>
+          <text x="280" y="250" font-size="10" text-anchor="middle" fill="#5b6270">
+            Hangi duraklardan geçtiğini ve her birinin kaç milisaniye sürdüğünü söyler.
+          </text>
+        </svg>
+      </div>
+
+      <div>
+        <div class="card tint">
+          <p class="kicker">Ne işe yarar</p>
+          <p>İnternetin yavaşladığında <b>nerede</b> yavaşladığını gösterir.
+             Hedef makineye kadar olan yolda hangi durak sıkıntı çıkarıyorsa
+             o satırda görünür.</p>
+        </div>
+
+        <div class="card" style="margin-top:9px">
+          <p class="kicker">Program çalışınca ne görürsün</p>
+          <pre>$ ./ft_traceroute google.com
+<b>traceroute to google.com (142.251.27.102), 30 hops max, 60 byte packets</b>
+ 1  192.168.1.1   0.431 ms  0.389 ms  0.364 ms
+ 2  10.40.0.1     8.112 ms  8.044 ms  8.230 ms
+ 3  <i>* * *</i>
+ 4  142.251.27.102  18.4 ms  18.1 ms  18.2 ms</pre>
+          <p style="margin-top:6px">
+            Her satır bir durak. Sağdaki üç sayı, o durağa üç kez sorup aldığımız
+            cevap süreleri. <code>* * *</code> ise o durak cevap vermedi demek —
+            hata değil, bazı duraklar kendini gizler.
+          </p>
+        </div>
+
+        <div class="card" style="margin-top:9px">
+          <p class="kicker">Ödevin kuralı</p>
+          <p>Bu programı <b>sıfırdan C ile</b> yazmak zorundayız. Sistemdeki
+             hazır <code>traceroute</code> komutunu çağırmak yasak. Çıktı da
+             gerçeğiyle <b>birebir aynı hizada</b> olmalı.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================= PAGE 2 ========= -->
+<section>
+  <div class="head">
+    <h1>Nasıl çalışıyor — hilenin tamamı</h1>
+    <div class="meta">Ecole 42 · Süreç anlatımı · 2 / 6</div>
+  </div>
+  <p class="lede">
+    Duraklar kendilerini tanıtmaz. O yüzden onları konuşturmak için küçük bir
+    numara yapılır. Numaranın adı <b>TTL</b>.
+  </p>
+
+  <div class="body">
+    <svg viewBox="0 0 1000 300" role="img" aria-label="TTL numarası">
+      <!-- adim 1 -->
+      <rect x="6" y="14" width="318" height="124" rx="6" fill="#e3edf8" stroke="#2563a8" stroke-width="1.3"/>
+      <text x="20" y="36" font-size="11" font-weight="700" fill="#2563a8">ADIM 1 — bilet ver</text>
+      <text x="20" y="58" font-size="10.5" fill="#16181d">Pakete bir bilet iliştiriyoruz:</text>
+      <text x="20" y="78" font-size="11" font-weight="700" fill="#16181d">&#8220;sadece 1 durak gidebilirsin&#8221;</text>
+      <text x="20" y="99" font-size="10" fill="#5b6270">Bu bilete TTL deniyor (Time To Live).</text>
+      <text x="20" y="117" font-size="10" fill="#5b6270">Her durak bileti 1 azaltır.</text>
+
+      <!-- adim 2 -->
+      <rect x="340" y="14" width="318" height="124" rx="6" fill="#fbf0db" stroke="#9a6a07" stroke-width="1.3"/>
+      <text x="354" y="36" font-size="11" font-weight="700" fill="#9a6a07">ADIM 2 — durak şikâyet eder</text>
+      <text x="354" y="58" font-size="10.5" fill="#16181d">Bilet 1. durakta biter. Durak paketi</text>
+      <text x="354" y="76" font-size="10.5" fill="#16181d">çöpe atar ve bize haber yollar:</text>
+      <text x="354" y="99" font-size="11" font-weight="700" fill="#16181d">&#8220;biletin bitti — ben buradayım&#8221;</text>
+      <text x="354" y="117" font-size="10" fill="#5b6270">İşte o haberin üstünde durağın adresi var.</text>
+
+      <!-- adim 3 -->
+      <rect x="674" y="14" width="320" height="124" rx="6" fill="#e2f2e9" stroke="#1d7a4f" stroke-width="1.3"/>
+      <text x="688" y="36" font-size="11" font-weight="700" fill="#1d7a4f">ADIM 3 — bileti büyüt, tekrarla</text>
+      <text x="688" y="58" font-size="10.5" fill="#16181d">Bilet 2 → 2. durak şikâyet eder.</text>
+      <text x="688" y="76" font-size="10.5" fill="#16181d">Bilet 3 → 3. durak şikâyet eder.</text>
+      <text x="688" y="99" font-size="10.5" fill="#16181d">... ta ki hedefe varana kadar.</text>
+      <text x="688" y="117" font-size="10" fill="#5b6270">Böylece tüm yol tek tek ortaya çıkar.</text>
+
+      <!-- merdiven -->
+      <g font-size="10">
+        <text x="14" y="176" font-size="11" font-weight="700" fill="#16181d">Pratikte şöyle görünüyor:</text>
+
+        <rect x="14" y="190" width="150" height="26" rx="4" fill="#f4f6f9" stroke="#d8dce4"/>
+        <text x="24" y="207" fill="#16181d">bilet = 1 &#8594; durak 1 konuştu</text>
+        <rect x="178" y="190" width="150" height="26" rx="4" fill="#f4f6f9" stroke="#d8dce4"/>
+        <text x="188" y="207" fill="#16181d">bilet = 2 &#8594; durak 2 konuştu</text>
+        <rect x="342" y="190" width="150" height="26" rx="4" fill="#f4f6f9" stroke="#d8dce4"/>
+        <text x="352" y="207" fill="#16181d">bilet = 3 &#8594; durak 3 konuştu</text>
+        <rect x="506" y="190" width="186" height="26" rx="4" fill="#e2f2e9" stroke="#1d7a4f"/>
+        <text x="516" y="207" fill="#16181d" font-weight="700">bilet = n &#8594; HEDEF cevap verdi, dur</text>
+      </g>
+
+      <!-- nasil anliyoruz hedefe vardigimizi -->
+      <rect x="14" y="234" width="678" height="56" rx="5" fill="#fff" stroke="#d8dce4"/>
+      <text x="26" y="254" font-size="10.5" font-weight="700" fill="#16181d">Hedefe vardığımızı nereden anlıyoruz?</text>
+      <text x="26" y="274" font-size="10" fill="#5b6270">Hedef makineye, hiçbir programın dinlemediği bir kapıdan sesleniyoruz. O da &#8220;burada öyle bir kapı yok&#8221; diyor. Bu cevap sadece hedeften gelir.</text>
+
+      <!-- problem kutusu -->
+      <rect x="706" y="160" width="288" height="130" rx="6" fill="#fbe8e4" stroke="#bf3b2b" stroke-width="1.3"/>
+      <text x="720" y="182" font-size="11" font-weight="700" fill="#bf3b2b">İŞİN ZOR KISMI</text>
+      <text x="720" y="204" font-size="10" fill="#16181d">Bu şikâyet mesajlarını dinlediğimiz</text>
+      <text x="720" y="220" font-size="10" fill="#16181d">posta kutusu <tspan font-weight="700">herkesin</tspan> mesajını alır.</text>
+      <text x="720" y="243" font-size="10" fill="#16181d">Yani gelen her mesaj bizim değil.</text>
+      <text x="720" y="266" font-size="10" fill="#5b6270">Hangisi bizim? Cevabı 3. sayfada —</text>
+      <text x="720" y="282" font-size="10" fill="#5b6270">projenin en kritik kısmı orası.</text>
+    </svg>
+
+    <div class="cols c3" style="margin-top:8px">
+      <div class="card tint">
+        <p class="kicker">Kaç durak</p>
+        <p>En fazla <b>30</b> durağa bakıyoruz. Gerçek traceroute da öyle yapıyor.</p>
+      </div>
+      <div class="card tint">
+        <p class="kicker">Kaç deneme</p>
+        <p>Her durağa <b>3 kez</b> soruyoruz. Bir tanesi kaybolursa diğerleri cevap verir.</p>
+      </div>
+      <div class="card tint">
+        <p class="kicker">Ne kadar bekliyoruz</p>
+        <p>Her soru için <b>5 saniye</b>. Cevap gelmezse <code>*</code> yazıp devam ediyoruz.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================= PAGE 3 ========= -->
+<section>
+  <div class="head">
+    <h1>Projenin en kritik kararı — &#8220;bu mesaj bizim mi?&#8221;</h1>
+    <div class="meta">Ecole 42 · Süreç anlatımı · 3 / 6</div>
+  </div>
+  <p class="lede">
+    Savunmada en çok sorulacak yer burası. Mantığı bir kere oturunca gerisi kolay.
+  </p>
+
+  <div class="body">
+    <div class="cols c2">
+      <div class="card">
+        <p class="kicker">Problem</p>
+        <p>Şikâyet mesajlarını dinlemek için <b>ham posta kutusu</b> (raw socket)
+           açmak zorundayız — çünkü bu mesajlar normal posta kutusuna düşmüyor.</p>
+        <p>Ama ham posta kutusu, bilgisayara gelen <b>bütün</b> şikâyet mesajlarını
+           alır. Aynı anda bir <code>ping</code> çalışıyorsa onunki de düşer.</p>
+        <p style="margin-top:6px"><span class="pill p-red">Soru</span>
+           Gelen mesajın bizim gönderdiğimiz pakete ait olduğunu nasıl ispatlarız?</p>
+      </div>
+
+      <div class="card" style="background:var(--greenb); border-color:var(--green)">
+        <p class="kicker" style="color:var(--green)">Çözüm — kural kitabında yazıyor</p>
+        <p>İnternet kuralları (RFC 792) şunu <b>zorunlu</b> tutuyor: bir durak
+           şikâyet ederken, şikâyete sebep olan paketin <b>başını da geri yollamak
+           zorunda</b>.</p>
+        <p>Yani mesajın içinde <b>bizim gönderdiğimiz paketin kopyası</b> var.
+           Onun içindeki <b>kapı numarasına</b> bakıyoruz.</p>
+        <p style="margin-top:6px"><b>Her denemeye farklı kapı numarası veriyoruz.</b>
+           Numara tutuyorsa mesaj bizim. Tutmuyorsa başkasının, atıyoruz.</p>
+      </div>
+    </div>
+
+    <svg viewBox="0 0 1000 150" style="margin-top:10px" role="img" aria-label="Paket icerigi">
+      <text x="6" y="16" font-size="10.5" font-weight="700" fill="#16181d">Gelen şikâyet mesajının içi:</text>
+
+      <rect x="6" y="28" width="230" height="52" fill="#f4f6f9" stroke="#9aa3b2"/>
+      <text x="121" y="50" font-size="10" font-weight="700" text-anchor="middle" fill="#16181d">zarf</text>
+      <text x="121" y="67" font-size="8.5" text-anchor="middle" fill="#5b6270">kim yolladı = durağın adresi</text>
+
+      <rect x="236" y="28" width="150" height="52" fill="#e3edf8" stroke="#2563a8"/>
+      <text x="311" y="50" font-size="10" font-weight="700" text-anchor="middle" fill="#16181d">şikâyet türü</text>
+      <text x="311" y="67" font-size="8.5" text-anchor="middle" fill="#5b6270">&#8220;bilet bitti&#8221; / &#8220;kapı yok&#8221;</text>
+
+      <rect x="386" y="28" width="210" height="52" fill="#f4f6f9" stroke="#9aa3b2"/>
+      <text x="491" y="50" font-size="10" font-weight="700" text-anchor="middle" fill="#16181d">bizim paketimizin başı</text>
+      <text x="491" y="67" font-size="8.5" text-anchor="middle" fill="#5b6270">geri yollamak zorundalar</text>
+
+      <rect x="596" y="28" width="120" height="52" fill="#fbe8e4" stroke="#bf3b2b" stroke-width="2.2"/>
+      <text x="656" y="50" font-size="10.5" font-weight="700" text-anchor="middle" fill="#bf3b2b">KAPI NO</text>
+      <text x="656" y="67" font-size="8.5" text-anchor="middle" fill="#5b6270">işte anahtar bu</text>
+
+      <rect x="716" y="28" width="278" height="52" fill="#f4f6f9" stroke="#9aa3b2"/>
+      <text x="855" y="57" font-size="9.5" text-anchor="middle" fill="#5b6270">gerisi bizi ilgilendirmiyor</text>
+
+      <path d="M656 92 L656 108" stroke="#bf3b2b" stroke-width="2"/>
+      <path d="M650 104 L656 112 L662 104 z" fill="#bf3b2b"/>
+      <text x="656" y="128" font-size="10.5" font-weight="700" text-anchor="middle" fill="#bf3b2b">33434 + deneme sırası</text>
+      <text x="656" y="143" font-size="9" text-anchor="middle" fill="#5b6270">tutuyorsa bizim, tutmuyorsa çöpe</text>
+    </svg>
+
+    <div class="cols c3" style="margin-top:8px">
+      <div class="card">
+        <p class="kicker">Neden zarfın adresi yetmez?</p>
+        <p>O adres <b>durağın</b> adresi. Hangi denememize ait olduğunu söylemez.</p>
+      </div>
+      <div class="card">
+        <p class="kicker">Neden başka bir numara değil?</p>
+        <p>Mesajdaki diğer numaralar bizim paket tipimizde anlamsız, bazılarını da
+           duraklar değiştiriyor.</p>
+      </div>
+      <div class="card" style="background:var(--tint)">
+        <p class="kicker">Kanıt repoda</p>
+        <p>Ağı dinleyip kaydettik:
+           <code>test/fixtures/wire-udp-probes.txt</code> — kapı numaraları
+           33434, 33435, 33436 diye artıyor.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================= PAGE 4 ========= -->
+<section>
+  <div class="head">
+    <h1>Nasıl yazdık — önce test, sonra kod</h1>
+    <div class="meta">Ecole 42 · Süreç anlatımı · 4 / 6</div>
+  </div>
+  <p class="lede">
+    Kod yazmadan önce, &#8220;bunu doğru yaptım&#8221; diyebilmek için <b>önce testi</b>
+    yazdık. Test kırmızı yanmadan tek satır kod yazılmadı.
+  </p>
+
+  <div class="body">
+    <div class="cols c21">
+      <div>
+        <svg viewBox="0 0 560 210" role="img" aria-label="TDD dongusu">
+          <circle cx="110" cy="70" r="46" fill="#fbe8e4" stroke="#bf3b2b" stroke-width="1.6"/>
+          <text x="110" y="64" font-size="12" font-weight="700" text-anchor="middle" fill="#bf3b2b">1. KIRMIZI</text>
+          <text x="110" y="81" font-size="8.5" text-anchor="middle" fill="#5b6270">testi yaz,</text>
+          <text x="110" y="94" font-size="8.5" text-anchor="middle" fill="#5b6270">patladığını gör</text>
+
+          <circle cx="280" cy="70" r="46" fill="#e2f2e9" stroke="#1d7a4f" stroke-width="1.6"/>
+          <text x="280" y="64" font-size="12" font-weight="700" text-anchor="middle" fill="#1d7a4f">2. YEŞİL</text>
+          <text x="280" y="81" font-size="8.5" text-anchor="middle" fill="#5b6270">kodu yaz,</text>
+          <text x="280" y="94" font-size="8.5" text-anchor="middle" fill="#5b6270">test geçsin</text>
+
+          <circle cx="450" cy="70" r="46" fill="#fbf0db" stroke="#9a6a07" stroke-width="1.6"/>
+          <text x="450" y="64" font-size="12" font-weight="700" text-anchor="middle" fill="#9a6a07">3. TEMİZLE</text>
+          <text x="450" y="81" font-size="8.5" text-anchor="middle" fill="#5b6270">düzelt, testler</text>
+          <text x="450" y="94" font-size="8.5" text-anchor="middle" fill="#5b6270">yeşil kalsın</text>
+
+          <g stroke="#9aa3b2" stroke-width="1.6" fill="none" marker-end="url(#ar2)">
+            <line x1="158" y1="70" x2="228" y2="70"/>
+            <line x1="328" y1="70" x2="398" y2="70"/>
+            <path d="M450 118 C450 168, 110 168, 110 118"/>
+          </g>
+          <defs>
+            <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0 0 L10 5 L0 10 z" fill="#9aa3b2"/>
+            </marker>
+          </defs>
+          <text x="280" y="186" font-size="9.5" text-anchor="middle" fill="#5b6270">
+            ve baştan — her yeni özellik için tekrar
+          </text>
+        </svg>
+
+        <div class="card tint" style="margin-top:4px">
+          <p class="kicker">Neden böyle?</p>
+          <p>Test önce yazılırsa, &#8220;zaten çalışıyordu&#8221; diyemezsin. Testin
+             bir kere <b>kırmızı yandığını gördüysen</b>, yeşile dönmesi kodun
+             gerçekten bir şey yaptığının kanıtıdır. Savunmada da bunu
+             gösterebiliyorsun.</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="kicker">Testler ne kontrol ediyor — 50 tane</p>
+        <table>
+          <tr><th>Grup</th><th>Ne bakıyor</th><th style="text-align:right">Adet</th></tr>
+          <tr><td><b>T-1xx</b></td><td>Dosya adı doğru mu, <code>make</code> kuralları gerçekten çalışıyor mu</td><td style="text-align:right">7</td></tr>
+          <tr><td><b>T-2xx</b></td><td>Yasaklı komutlar koda sızmış mı, sadece izin verilen kütüphane mi kullanılmış</td><td style="text-align:right">4</td></tr>
+          <tr><td><b>T-5xx</b></td><td>Yanlış kullanımda düzgün hata veriyor mu, IP ve alan adı ikisi de çalışıyor mu</td><td style="text-align:right">10</td></tr>
+          <tr><td><b>T-6xx</b></td><td>Ağı dinleyip gerçekten doğru paketleri yolladığımızı ispat</td><td style="text-align:right">3</td></tr>
+          <tr><td><b>T-7xx</b></td><td>Çıktı gerçeğiyle aynı hizada mı, hedefe varınca duruyor mu, süreler doğru mu</td><td style="text-align:right">9</td></tr>
+          <tr><td><b>T-8xx</b></td><td>Ek özelliklerin ayarları ve yanlış değer verilince hata vermesi</td><td style="text-align:right">17</td></tr>
+        </table>
+
+        <div class="cols c3" style="margin-top:9px">
+          <div class="card" style="text-align:center">
+            <div class="big" style="color:var(--green)">50</div>
+            <div class="biglabel">test geçiyor</div>
+          </div>
+          <div class="card" style="text-align:center">
+            <div class="big" style="color:var(--green)">0</div>
+            <div class="biglabel">hata / atlanan</div>
+          </div>
+          <div class="card" style="text-align:center">
+            <div class="big" style="color:var(--green)">0</div>
+            <div class="biglabel">bellek sızıntısı</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:9px">
+          <p class="kicker">En önemli test — T-704</p>
+          <p>Kendi çıktımızı ve gerçek <code>traceroute</code> çıktısını alıp
+             <b>bütün rakamları N harfine çeviriyoruz</b>. Geriye sadece hizalama
+             kalıyor. İkisi <b>harfi harfine aynı</b> çıkıyor.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================= PAGE 5 ========= -->
+<section>
+  <div class="head">
+    <h1>14 Kasım — saat saat ne oldu</h1>
+    <div class="meta">Ecole 42 · Süreç anlatımı · 5 / 6</div>
+  </div>
+  <p class="lede">
+    Hedef: bir saatte bitirmek. Kodlama bir saatte bitti; kalan zaman doğrulama,
+    gerçek bir Linux makinede test ve yolda çıkan hataları düzeltmekle geçti.
+  </p>
+
+  <div class="body">
+    <table class="wrapcell">
+      <tr>
+        <th style="width:58px">Saat</th>
+        <th style="width:200px">Ne yapıldı</th>
+        <th>Neden / sonuç</th>
+      </tr>
+      <tr>
+        <td class="mono">16:45</td>
+        <td><span class="pill p-violet">HAZIRLIK</span> Eski proje incelendi</td>
+        <td>Bir önceki ödev (<code>ft_ping</code>) okundu. Yeniden kullanılacak parçalar ve <b>tekrarlanmaması gereken hatalar</b> çıkarıldı — orada döngü, soket açan fonksiyonun içine gömülmüştü ve temizlik kodu hiç çalışmıyordu.</td>
+      </tr>
+      <tr>
+        <td class="mono">17:00</td>
+        <td><span class="pill p-violet">TASARIM</span> Tasarım belgesi yazıldı</td>
+        <td>Kod yazılmadan önce <code>docs/sdd/SDD.md</code>. En önemlisi: ödev hangi yöntemi kullanacağımızı söylemiyor, iki ipucundan çıkardık (gerçek traceroute'un varsayılanı ve ek özellik listesinde &#8220;kapı&#8221; ayarının olması).</td>
+      </tr>
+      <tr>
+        <td class="mono">17:10</td>
+        <td><span class="pill p-red">KIRMIZI</span> Testler yazıldı, hepsi patladı</td>
+        <td>Henüz kod yok, patlaması gerekiyordu — patladı. Ölçüt hazır.</td>
+      </tr>
+      <tr>
+        <td class="mono">17:21</td>
+        <td><span class="pill p-green">YEŞİL</span> Ana program bitti</td>
+        <td>İlk commit. Zorunlu kısmın tamamı: argümanlar, iki posta kutusu, TTL döngüsü, eşleştirme, çıktı biçimi. Testler yeşile döndü.</td>
+      </tr>
+      <tr>
+        <td class="mono">17:47</td>
+        <td><span class="pill p-green">YEŞİL</span> 5 ek özellik</td>
+        <td>Ödev en fazla 5 ek özellik sayıyor; beşi de eklendi. Ek özellik verilmediğinde program <b>aynen eskisi gibi</b> davranıyor — bu önemli, çünkü zorunlu kısım bozulmamalı.</td>
+      </tr>
+      <tr>
+        <td class="mono">18:19</td>
+        <td><span class="pill p-amber">DÜZELTME</span> Karşılaştırma aracı yanlış çalışıyormuş</td>
+        <td>Gerçek traceroute ile karşılaştıran araç, karşı tarafı yanlış ayarla çalıştırıyordu ve <b>olmayan bir fark</b> gösteriyordu. Fark bizde değil, karşılaştırmadaydı.</td>
+      </tr>
+      <tr>
+        <td class="mono">18:32</td>
+        <td><span class="pill p-red">KIRMIZI</span> Eksik testler bulundu</td>
+        <td>Ödev maddeleri tek tek tarandı: dosya adı, <code>make</code> kuralları, yasaklı komutlar, süre toleransı — hiçbiri test edilmiyormuş. 18 yeni test eklendi.</td>
+      </tr>
+      <tr>
+        <td class="mono">18:41</td>
+        <td><span class="pill p-amber">DÜZELTME</span> Build, kendi kontrolümüzü kapatıyormuş</td>
+        <td>Detayı 6. sayfada. Kendi yazdığımız <code>Makefile</code>, bellek kontrol aracını sessizce devre dışı bırakıyordu.</td>
+      </tr>
+      <tr>
+        <td class="mono">18:59</td>
+        <td><span class="pill p-blue">KANIT</span> Ağ dinlendi, kayıt alındı</td>
+        <td>Gerçekten doğru paketleri mi yolluyoruz? Ağ trafiği kaydedildi, <code>test/fixtures/</code> altına kondu. Artık &#8220;niye doğru diyorsun?&#8221; sorusunun cevabı repoda.</td>
+      </tr>
+      <tr>
+        <td class="mono">19:06</td>
+        <td><span class="pill p-blue">ORTAM</span> Linux sanal makine</td>
+        <td>Ödev &#8220;Linux sanal makinede değerlendirilecek&#8221; diyor. Ekransız bir Debian kuruldu, proje orada da <b>50/50</b> geçti.</td>
+      </tr>
+      <tr>
+        <td class="mono" style="white-space:nowrap">19:21&#8211;19:33</td>
+        <td><span class="pill p-amber">DÜZELTME</span> Okul makinesinde 3 ayrı patlama</td>
+        <td>Proje başka bir bilgisayara kopyalanınca sanal makine kurulumu üç ayrı yerde patladı. Üçü de düzeltildi — detayı 6. sayfada.</td>
+      </tr>
+    </table>
+
+    <div class="cols c3" style="margin-top:9px">
+      <div class="card" style="text-align:center"><div class="big">13</div><div class="biglabel">commit</div></div>
+      <div class="card" style="text-align:center"><div class="big">1.104</div><div class="biglabel">satır C kodu</div></div>
+      <div class="card" style="text-align:center"><div class="big">3.821</div><div class="biglabel">satır doküman</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================= PAGE 6 ========= -->
+<section>
+  <div class="head">
+    <h1>Yolda patlayan 6 şey — ve nasıl çözüldü</h1>
+    <div class="meta">Ecole 42 · Süreç anlatımı · 6 / 6</div>
+  </div>
+  <p class="lede">
+    Hiçbiri ilk denemede ortaya çıkmadı. Hepsi &#8220;başka bir yerde çalıştırınca&#8221;
+    çıktı. En değerli kısım burası.
+  </p>
+
+  <div class="body compact">
+    <div class="cols c2" style="gap:9px">
+      <div class="card">
+        <p class="kicker" style="color:var(--red)">1 · Build kendi kontrolümüzü kapatıyordu</p>
+        <p><b>Belirti:</b> Bellek kontrol aracı çalışmıyor, &#8220;izin yok&#8221; diyor.</p>
+        <p><b>Sebep:</b> <code>make</code>, programa ağ yetkisi veriyordu. Yetki verilmiş bir programı o araç <b>güvenlik gereği hiç çalıştırmıyor</b>.</p>
+        <p><b>Çözüm:</b> Yetki artık otomatik verilmiyor, isteyen <code>make setcap</code> diyor. Docker'da fark edilmemişti çünkü orada zaten tam yetkiyle çalışıyorduk.</p>
+      </div>
+
+      <div class="card">
+        <p class="kicker" style="color:var(--red)">2 · Karşılaştırma olmayan fark gösteriyordu</p>
+        <p><b>Belirti:</b> Kendi çıktımız gerçeğinden farklı görünüyordu.</p>
+        <p><b>Sebep:</b> Gerçek traceroute'u yanlış ayarla çalıştırıyorduk; o adresleri isme çeviriyordu, biz çevirmiyorduk — <b>çünkü ödev bunu yasaklıyor</b>.</p>
+        <p><b>Çözüm:</b> Karşı taraf da aynı ayarla çalıştırıldı. Fark sıfırlandı.</p>
+      </div>
+
+      <div class="card">
+        <p class="kicker" style="color:var(--amber)">3 · Sertifika hatası (okul makinesi)</p>
+        <p><b>Belirti:</b> <code>curl: (60) ... unable to get local issuer certificate</code></p>
+        <p><b>Sebep:</b> O makinede güvenilir sertifika listesi kullanılamıyor. Okul ağı araya giriyorsa bu olur.</p>
+        <p><b>Çözüm:</b> Script sırayla 4 yol deniyor; en sonda dosyayı düz bağlantıyla indirip <b>parmak iziyle doğruluyor</b>. Güvenlik kontrolü hiçbir adımda kapatılmıyor.</p>
+      </div>
+
+      <div class="card">
+        <p class="kicker" style="color:var(--amber)">4 · Disk ev dizinine kuruluyordu</p>
+        <p><b>Belirti:</b> Okul makinesinde yer yok.</p>
+        <p><b>Sebep:</b> Sanal makinenin diski 1,3 GB; okul ev dizininin kotası bunu kaldırmıyor.</p>
+        <p><b>Çözüm:</b> Script artık <code>goinfre</code> varsa oraya kuruyor, yoksa ev dizinine. Hangisini seçtiğini ekrana yazıyor, yer azsa uyarıyor.</p>
+      </div>
+
+      <div class="card">
+        <p class="kicker" style="color:var(--amber)">5 · Disk büyütülemiyordu</p>
+        <p><b>Belirti:</b> <code>Failed to create medium lock list</code></p>
+        <p><b>Sebep:</b> İndirdiğimiz hazır disk 3 GB; derleme araçları sığmıyor. Büyütmek gerekiyor ama iki araç da büyütemiyordu — biri dosyayı tanımıyor, diğeri o biçimi desteklemiyor.</p>
+        <p><b>Çözüm:</b> Sıra değiştirildi: <b>önce büyüt, sonra çevir</b>. İkisi de sorunsuz.</p>
+      </div>
+
+      <div class="card">
+        <p class="kicker" style="color:var(--amber)">6 · Sanal makine açılmıyordu</p>
+        <p><b>Belirti:</b> <code>Failed to construct device 'vga'</code></p>
+        <p><b>Sebep:</b> Ekran kartı tipi açıkça yazılmamıştı; bu işlemci mimarisinde varsayılan çakışıyor. Ekransız çalıştığımız hâlde gerekiyormuş.</p>
+        <p><b>Çözüm:</b> Tip açıkça belirtildi. Boş bir klasörden baştan sona test edildi.</p>
+      </div>
+    </div>
+
+    <div class="cols c21" style="margin-top:9px">
+      <div class="card" style="background:var(--greenb); border-color:var(--green)">
+        <p class="kicker" style="color:var(--green)">Teslim durumu</p>
+        <p><b>Zorunlu kısım tamam</b> (10 madde) · <b>Ek özellikler 5/5</b> ·
+           <b>50/50 test</b> geçiyor · kod standardı <b>0 hata</b> ·
+           bellek <b>0 sızıntı</b> · çıktı gerçeğiyle <b>birebir</b>.
+           GitHub'dan temiz kopya alınıp derlendi, çalıştı.</p>
+      </div>
+      <div class="card">
+        <p class="kicker">Tek açık madde — dürüst not</p>
+        <p>Çok duraklı gerçek bir yol bu bilgisayarlarda görülemiyor: ağ ayarı
+           ara durakların cevaplarını engelliyor. <b>Gerçek traceroute da aynı
+           ortamda aynı şeyi yapıyor</b> — yani kodda değil, ortamda kısıt var.
+           Kablolu ağda tek komutla kapanıyor.</p>
+      </div>
+    </div>
+  </div>
+</section>

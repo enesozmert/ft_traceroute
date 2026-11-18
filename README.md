@@ -386,7 +386,8 @@ ft_traceroute/
     ├── report/report.md                 # durum raporu + savunma Q&A
     ├── report/vm-test-report.md         # VM koşu raporu
     └── presentation/
-        ├── ft_traceroute-overview.pdf   # 3 sayfa A4 yatay özet
+        ├── ft_traceroute-overview.pdf   # 3 sayfa A4 yatay teknik özet
+        ├── ft_traceroute-surec.pdf      # 6 sayfa süreç anlatımı, sade dil
         └── PROJE-ANLATIMI.md            # savunma için hap bilgi kartı
 ```
 
@@ -399,6 +400,7 @@ ft_traceroute/
 | Subject (resmi PDF) | [`docs/main/en.subject.pdf`](docs/main/en.subject.pdf) |
 | **Anlatım kartı (savunma)** | [`docs/presentation/PROJE-ANLATIMI.md`](docs/presentation/PROJE-ANLATIMI.md) |
 | **Genel bakış PDF'i (3 sayfa)** | [`docs/presentation/ft_traceroute-overview.pdf`](docs/presentation/ft_traceroute-overview.pdf) |
+| **Süreç anlatımı PDF'i (6 sayfa, sade dil)** | [`docs/presentation/ft_traceroute-surec.pdf`](docs/presentation/ft_traceroute-surec.pdf) |
 | Tasarım dokümanı (SDD) | [`docs/sdd/SDD.md`](docs/sdd/SDD.md) |
 | Subject kuralları | [`docs/rules/01-subject-rules.md`](docs/rules/01-subject-rules.md) |
 | Ağ protokolü | [`docs/rules/08-network-protocol.md`](docs/rules/08-network-protocol.md) |
