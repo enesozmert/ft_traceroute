@@ -138,7 +138,7 @@
 <section>
   <div class="head">
     <h1>ft_traceroute — bu program ne yapıyor?</h1>
-    <div class="meta">Ecole 42 · Süreç anlatımı · 1 / 6</div>
+    <div class="meta">Ecole 42 · Süreç anlatımı · 1 / 9</div>
   </div>
   <p class="lede">
     En baştan, en sade haliyle. Önce programın ne işe yaradığı, sonra nasıl
@@ -240,15 +240,214 @@
   </div>
 </section>
 
+<!-- ======================================================= TARİHÇE ======== -->
+<section>
+  <div class="head">
+    <h1>Bu fikir nereden çıktı? &#8212; 1987</h1>
+    <div class="meta">Ecole 42 · Süreç anlatımı · 2 / 9</div>
+  </div>
+  <p class="lede">
+    Traceroute bir tasarım toplantısında doğmadı. Bir mühendisin bir hafta
+    boyunca &#8220;paketlerim nereye gidiyor?&#8221; diye delirmesinden doğdu.
+  </p>
+
+  <div class="body compact">
+    <svg viewBox="0 0 1000 108" role="img" aria-label="Zaman cizelgesi" style="margin-bottom:8px">
+      <line x1="40" y1="62" x2="960" y2="62" stroke="#d8dce4" stroke-width="2"/>
+
+      <circle cx="90" cy="62" r="7" fill="#2563a8"/>
+      <text x="90" y="40" font-size="12" font-weight="700" text-anchor="middle" fill="#16181d">1981</text>
+      <text x="90" y="86" font-size="9.5" text-anchor="middle" fill="#5b6270">IP ve ICMP</text>
+      <text x="90" y="99" font-size="9.5" text-anchor="middle" fill="#5b6270">standart oluyor</text>
+
+      <circle cx="300" cy="62" r="9" fill="#bf3b2b"/>
+      <text x="300" y="40" font-size="12" font-weight="700" text-anchor="middle" fill="#16181d">1987</text>
+      <text x="300" y="86" font-size="9.5" text-anchor="middle" fill="#5b6270">Van Jacobson</text>
+      <text x="300" y="99" font-size="9.5" text-anchor="middle" fill="#5b6270">traceroute&#8217;u yazıyor</text>
+
+      <circle cx="510" cy="62" r="7" fill="#1d7a4f"/>
+      <text x="510" y="40" font-size="12" font-weight="700" text-anchor="middle" fill="#16181d">20 Ara 1988</text>
+      <text x="510" y="86" font-size="9.5" text-anchor="middle" fill="#5b6270">herkese duyuruluyor</text>
+      <text x="510" y="99" font-size="9.5" text-anchor="middle" fill="#5b6270">(e-posta listesi)</text>
+
+      <circle cx="720" cy="62" r="7" fill="#9a6a07"/>
+      <text x="720" y="40" font-size="12" font-weight="700" text-anchor="middle" fill="#16181d">1990&#8217;lar</text>
+      <text x="720" y="86" font-size="9.5" text-anchor="middle" fill="#5b6270">her Unix&#8217;e giriyor,</text>
+      <text x="720" y="99" font-size="9.5" text-anchor="middle" fill="#5b6270">Windows&#8217;ta <tspan font-family="monospace">tracert</tspan></text>
+
+      <circle cx="925" cy="62" r="7" fill="#6b4b9a"/>
+      <text x="925" y="40" font-size="12" font-weight="700" text-anchor="middle" fill="#16181d">bugün</text>
+      <text x="925" y="86" font-size="9.5" text-anchor="middle" fill="#5b6270">biz yeniden</text>
+      <text x="925" y="99" font-size="9.5" text-anchor="middle" fill="#5b6270">yazıyoruz</text>
+    </svg>
+
+    <div class="cols c21">
+      <div>
+        <div class="card">
+          <p class="kicker">Problem</p>
+          <p>1980&#8217;lerin sonunda internet büyüyordu ama <b>kör</b> bir ağdı.
+             Paketler kayboluyordu ve kimse <b>nerede</b> kaybolduğunu
+             bilemiyordu. Elinde sadece &#8220;gitti mi, gitmedi mi&#8221; vardı
+             (<code>ping</code>). Arada ne olduğu karanlıktı.</p>
+        </div>
+
+        <div class="card" style="margin-top:10px; background:var(--tint)">
+          <p class="kicker">Van Jacobson&#8217;ın kendi duyurusu &#8212; 20 Aralık 1988</p>
+          <p style="font-style:italic">&#8220;...bir hafta boyunca <b>&#8216;bu paketler de nereye gidiyor?&#8217;</b>
+             diye uğraştıktan sonra, bir hosta giden yolu çıkaran bir program
+             uydurdum.&#8221;</p>
+          <p style="font-style:italic; margin-top:4px">&#8220;TTL&#8217;i bir olan bir UDP paketi
+             yollayıp ICMP &#8216;time exceeded&#8217; mesajını dinleyerek çalışıyor.
+             Mesaj gelirse kaynak adresini yazdırıyor, sonra TTL&#8217;i bir artırıyor...&#8221;</p>
+          <p style="font-style:italic; margin-top:4px">&#8220;Her zamanki gibi bu zekice fikir benim
+             değil &#8212; <b>Steve Deering</b>&#8217;in bir toplantıda söylediğini duymuştum.&#8221;</p>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <p class="kicker">Kim, nerede</p>
+          <table style="font-size:10.4pt">
+            <tr><td style="white-space:nowrap"><b>Van Jacobson</b></td><td>Yazan. Lawrence Berkeley Laboratuvarı (ABD). Aynı kişi internetin tıkanıklık kontrolünü de çözdü &#8212; bugün her TCP bağlantısı onun algoritmasını kullanıyor.</td></tr>
+            <tr><td style="white-space:nowrap"><b>Steve Deering</b></td><td>Fikri veren. Bir toplantıda &#8220;her durak kendini tanıtsa ne olur?&#8221; demiş.</td></tr>
+            <tr><td style="white-space:nowrap"><b>Guy Almes<br>Matt Mathis</b></td><td>Aynı fikri bağımsız olarak aynı dönemde düşünmüşler.</td></tr>
+          </table>
+        </div>
+
+        <div class="card" style="margin-top:10px">
+          <p class="kicker">Neden hâlâ aynı mantık</p>
+          <p>38 yıl sonra bile yöntem <b>birebir aynı</b>: TTL&#8217;i artır, gelen
+             ICMP bildiriminin kaynak adresini yaz. Çünkü fikir ağın
+             <b>zaten var olan</b> bir kuralını kullanıyor &#8212; yeni bir şey
+             eklemiyor, mevcut hata mekanizmasını teşhis aracına çeviriyor.</p>
+          <p style="margin-top:6px">Bizim yazdığımız program da aynı yöntemi
+             kullanıyor; ödevin istediği de bu.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card tint" style="margin-top:8px">
+      <p class="kicker">Küçük ayrım &#8212; Unix ve Windows farklı davranır</p>
+      <p>Unix/Linux&#8217;ta <code>traceroute</code> varsayılan olarak <b>UDP</b>, Windows&#8217;ta
+         <code>tracert</code> ise <b>ICMP Echo</b> yollar. İkisi de aynı TTL numarasını kullanır,
+         sadece araç farklı. <b>Biz Unix tarafındayız</b> &#8212; ödev çıktının gerçek
+         traceroute ile aynı olmasını istediği için UDP seçtik.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================= KATMANLAR ====== -->
+<section>
+  <div class="head">
+    <h1>Ağ katmanları &#8212; biz hangi katta çalışıyoruz?</h1>
+    <div class="meta">Ecole 42 · Süreç anlatımı · 3 / 9</div>
+  </div>
+  <p class="lede">
+    Ağ, üst üste kaymış katlardan oluşur. Her kat bir altındakini kullanır ve
+    üstündekinden habersizdir. Traceroute&#8217;un zekice yanı: <b>üç kata birden
+    dokunması</b>.
+  </p>
+
+  <div class="body">
+    <div class="cols c2">
+      <div>
+        <svg viewBox="0 0 520 300" role="img" aria-label="Katmanlar">
+          <!-- katlar -->
+          <rect x="10" y="10" width="330" height="44" rx="4" fill="#f4f6f9" stroke="#9aa3b2"/>
+          <text x="24" y="31" font-size="11.5" font-weight="700" fill="#16181d">4 · Uygulama</text>
+          <text x="24" y="47" font-size="9.5" fill="#5b6270">tarayıcı, e-posta, ft_traceroute&#8217;un kendisi</text>
+
+          <rect x="10" y="62" width="330" height="56" rx="4" fill="#e3edf8" stroke="#2563a8" stroke-width="1.8"/>
+          <text x="24" y="83" font-size="11.5" font-weight="700" fill="#2563a8">3 · Taşıma (TCP / UDP)</text>
+          <text x="24" y="99" font-size="9.5" fill="#5b6270">&#8220;hangi kapıdan&#8221; &#8212; port numarası burada</text>
+          <text x="24" y="113" font-size="9.5" font-weight="700" fill="#16181d">biz: UDP paketi yolluyoruz</text>
+
+          <rect x="10" y="126" width="330" height="70" rx="4" fill="#fbe8e4" stroke="#bf3b2b" stroke-width="1.8"/>
+          <text x="24" y="147" font-size="11.5" font-weight="700" fill="#bf3b2b">2 · Ağ (IP + ICMP)</text>
+          <text x="24" y="163" font-size="9.5" fill="#5b6270">&#8220;hangi makineye&#8221; &#8212; adresler ve yönlendirme</text>
+          <text x="24" y="177" font-size="9.5" font-weight="700" fill="#16181d">biz: TTL&#8217;i buradan ayarlıyoruz</text>
+          <text x="24" y="191" font-size="9.5" font-weight="700" fill="#16181d">biz: ICMP bildirimini buradan okuyoruz</text>
+
+          <rect x="10" y="204" width="330" height="44" rx="4" fill="#f4f6f9" stroke="#9aa3b2"/>
+          <text x="24" y="225" font-size="11.5" font-weight="700" fill="#16181d">1 · Bağlantı</text>
+          <text x="24" y="241" font-size="9.5" fill="#5b6270">ethernet kablosu, wifi &#8212; bizi ilgilendirmiyor</text>
+
+          <!-- sag taraf aciklama -->
+          <path d="M346 90 L400 90" stroke="#2563a8" stroke-width="1.6" fill="none" marker-end="url(#a3)"/>
+          <path d="M346 160 L400 160" stroke="#bf3b2b" stroke-width="1.6" fill="none" marker-end="url(#a4)"/>
+          <defs>
+            <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#2563a8"/></marker>
+            <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#bf3b2b"/></marker>
+          </defs>
+          <text x="404" y="86" font-size="10" font-weight="700" fill="#2563a8">port</text>
+          <text x="404" y="100" font-size="9" fill="#5b6270">eşleştirme</text>
+          <text x="404" y="114" font-size="9" fill="#5b6270">anahtarı</text>
+
+          <text x="404" y="150" font-size="10" font-weight="700" fill="#bf3b2b">TTL</text>
+          <text x="404" y="164" font-size="9" fill="#5b6270">numaranın</text>
+          <text x="404" y="178" font-size="9" fill="#5b6270">kendisi</text>
+
+          <text x="10" y="276" font-size="10.5" font-weight="700" fill="#16181d">Normal bir program sadece en üst kattan konuşur.</text>
+          <text x="10" y="292" font-size="10.5" fill="#5b6270">Traceroute alt katlara elini sokar &#8212; bu yüzden yetki ister.</text>
+        </svg>
+      </div>
+
+      <div>
+        <div class="card">
+          <p class="kicker">Paketin içi &#8212; kutu içinde kutu</p>
+          <p>Yolladığımız her paket iç içe geçmiş kutulardır. Her kat kendi
+             etiketini en başa ekler:</p>
+          <svg viewBox="0 0 520 70" style="margin-top:6px" role="img" aria-label="Paket katmanlari">
+            <rect x="2" y="12" width="120" height="40" fill="#f4f6f9" stroke="#9aa3b2"/>
+            <text x="62" y="30" font-size="10" font-weight="700" text-anchor="middle" fill="#16181d">ethernet</text>
+            <text x="62" y="44" font-size="8.5" text-anchor="middle" fill="#5b6270">kat 1</text>
+
+            <rect x="122" y="12" width="150" height="40" fill="#fbe8e4" stroke="#bf3b2b" stroke-width="1.6"/>
+            <text x="197" y="30" font-size="10" font-weight="700" text-anchor="middle" fill="#bf3b2b">IP başlığı</text>
+            <text x="197" y="44" font-size="8.5" text-anchor="middle" fill="#5b6270">kat 2 &#8212; <tspan font-weight="700">TTL burada</tspan></text>
+
+            <rect x="272" y="12" width="140" height="40" fill="#e3edf8" stroke="#2563a8" stroke-width="1.6"/>
+            <text x="342" y="30" font-size="10" font-weight="700" text-anchor="middle" fill="#2563a8">UDP başlığı</text>
+            <text x="342" y="44" font-size="8.5" text-anchor="middle" fill="#5b6270">kat 3 &#8212; <tspan font-weight="700">port burada</tspan></text>
+
+            <rect x="412" y="12" width="106" height="40" fill="#f4f6f9" stroke="#9aa3b2"/>
+            <text x="465" y="30" font-size="10" font-weight="700" text-anchor="middle" fill="#16181d">veri</text>
+            <text x="465" y="44" font-size="8.5" text-anchor="middle" fill="#5b6270">32 bayt, boş</text>
+          </svg>
+        </div>
+
+        <div class="card" style="margin-top:10px; background:var(--amberb); border-color:var(--amber)">
+          <p class="kicker" style="color:var(--amber)">İşin püf noktası</p>
+          <p><b>TTL kat 2&#8217;de, port kat 3&#8217;te.</b> Yani numarayı kat 2&#8217;den
+             yapıyoruz ama &#8220;bu cevap bizim mi?&#8221; sorusunu kat 3&#8217;teki
+             bilgiyle çözüyoruz.</p>
+          <p style="margin-top:6px">Üstelik o kat 3 bilgisini, geri gelen ICMP
+             bildiriminin <b>içine gömülü</b> eski paketimizden okuyoruz. Katmanları
+             açıp içine bakmak gerekiyor &#8212; sıradan bir program bunu yapamaz.</p>
+        </div>
+
+        <div class="card" style="margin-top:10px">
+          <p class="kicker">Neden root yetkisi gerekiyor</p>
+          <p>Normal bir program yalnızca kat 3&#8217;ten (port) konuşabilir. ICMP
+             bildirimleri kat 2&#8217;de yaşar ve hiçbir porta düşmez. Onları görmek
+             için <b>ham soket</b> açmak gerekir &#8212; işletim sistemi bunu sadece
+             yetkili kullanıcıya verir, çünkü ham soketle ağdaki her şey okunabilir.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ======================================================= PAGE 2 ========= -->
 <section>
   <div class="head">
     <h1>Nasıl çalışıyor — hilenin tamamı</h1>
-    <div class="meta">Ecole 42 · Süreç anlatımı · 2 / 6</div>
+    <div class="meta">Ecole 42 · Süreç anlatımı · 4 / 9</div>
   </div>
   <p class="lede">
-    Duraklar kendilerini tanıtmaz. O yüzden onları konuşturmak için küçük bir
-    numara yapılır. Numaranın adı <b>TTL</b>.
+    Duraklar kendilerini tanıtmaz. Onları konuşturmak için küçük bir numara
+    yapılır. Numaranın adı <b>TTL</b>, geri gelen bildirimin adı <b>ICMP</b> —
+    yani ağın hata bildirme dili.
   </p>
 
   <div class="body">
@@ -263,17 +462,17 @@
 
       <!-- adim 2 -->
       <rect x="340" y="14" width="318" height="124" rx="6" fill="#fbf0db" stroke="#9a6a07" stroke-width="1.3"/>
-      <text x="354" y="36" font-size="11" font-weight="700" fill="#9a6a07">ADIM 2 — durak şikâyet eder</text>
+      <text x="354" y="36" font-size="11" font-weight="700" fill="#9a6a07">ADIM 2 — durak hata bildirir</text>
       <text x="354" y="58" font-size="10.5" fill="#16181d">Bilet 1. durakta biter. Durak paketi</text>
-      <text x="354" y="76" font-size="10.5" fill="#16181d">çöpe atar ve bize haber yollar:</text>
+      <text x="354" y="76" font-size="10.5" fill="#16181d">çöpe atar ve bize bir bildirim yollar:</text>
       <text x="354" y="99" font-size="11" font-weight="700" fill="#16181d">&#8220;biletin bitti — ben buradayım&#8221;</text>
       <text x="354" y="117" font-size="10" fill="#5b6270">İşte o haberin üstünde durağın adresi var.</text>
 
       <!-- adim 3 -->
       <rect x="674" y="14" width="320" height="124" rx="6" fill="#e2f2e9" stroke="#1d7a4f" stroke-width="1.3"/>
       <text x="688" y="36" font-size="11" font-weight="700" fill="#1d7a4f">ADIM 3 — bileti büyüt, tekrarla</text>
-      <text x="688" y="58" font-size="10.5" fill="#16181d">Bilet 2 → 2. durak şikâyet eder.</text>
-      <text x="688" y="76" font-size="10.5" fill="#16181d">Bilet 3 → 3. durak şikâyet eder.</text>
+      <text x="688" y="58" font-size="10.5" fill="#16181d">Bilet 2 → 2. durak bildirim yollar.</text>
+      <text x="688" y="76" font-size="10.5" fill="#16181d">Bilet 3 → 3. durak bildirim yollar.</text>
       <text x="688" y="99" font-size="10.5" fill="#16181d">... ta ki hedefe varana kadar.</text>
       <text x="688" y="117" font-size="10" fill="#5b6270">Böylece tüm yol tek tek ortaya çıkar.</text>
 
@@ -294,12 +493,13 @@
       <!-- nasil anliyoruz hedefe vardigimizi -->
       <rect x="14" y="234" width="678" height="56" rx="5" fill="#fff" stroke="#d8dce4"/>
       <text x="26" y="254" font-size="10.5" font-weight="700" fill="#16181d">Hedefe vardığımızı nereden anlıyoruz?</text>
-      <text x="26" y="274" font-size="10" fill="#5b6270">Hedef makineye, hiçbir programın dinlemediği bir kapıdan sesleniyoruz. O da &#8220;burada öyle bir kapı yok&#8221; diyor. Bu cevap sadece hedeften gelir.</text>
+      <text x="26" y="272" font-size="10" fill="#5b6270">Hedef makineye, hiçbir programın dinlemediği bir kapıdan sesleniyoruz. O da &#8220;burada öyle bir kapı yok&#8221; diyor.</text>
+      <text x="26" y="287" font-size="9.5" fill="#5b6270">Gerçek adı: <tspan font-weight="700">ICMP Port Unreachable</tspan>. Bu cevabı sadece hedefin kendisi verir, ara duraklar vermez.</text>
 
       <!-- problem kutusu -->
       <rect x="706" y="160" width="288" height="130" rx="6" fill="#fbe8e4" stroke="#bf3b2b" stroke-width="1.3"/>
       <text x="720" y="182" font-size="11" font-weight="700" fill="#bf3b2b">İŞİN ZOR KISMI</text>
-      <text x="720" y="204" font-size="10" fill="#16181d">Bu şikâyet mesajlarını dinlediğimiz</text>
+      <text x="720" y="204" font-size="10" fill="#16181d">Bu hata bildirimlerini dinlediğimiz</text>
       <text x="720" y="220" font-size="10" fill="#16181d">posta kutusu <tspan font-weight="700">herkesin</tspan> mesajını alır.</text>
       <text x="720" y="243" font-size="10" fill="#16181d">Yani gelen her mesaj bizim değil.</text>
       <text x="720" y="266" font-size="10" fill="#5b6270">Hangisi bizim? Cevabı 3. sayfada —</text>
@@ -327,7 +527,7 @@
 <section>
   <div class="head">
     <h1>Projenin en kritik kararı — &#8220;bu mesaj bizim mi?&#8221;</h1>
-    <div class="meta">Ecole 42 · Süreç anlatımı · 3 / 6</div>
+    <div class="meta">Ecole 42 · Süreç anlatımı · 5 / 9</div>
   </div>
   <p class="lede">
     Savunmada en çok sorulacak yer burası. Mantığı bir kere oturunca gerisi kolay.
@@ -337,9 +537,9 @@
     <div class="cols c2">
       <div class="card">
         <p class="kicker">Problem</p>
-        <p>Şikâyet mesajlarını dinlemek için <b>ham posta kutusu</b> (raw socket)
+        <p>Hata bildirimlerini dinlemek için <b>ham posta kutusu</b> (raw socket)
            açmak zorundayız — çünkü bu mesajlar normal posta kutusuna düşmüyor.</p>
-        <p>Ama ham posta kutusu, bilgisayara gelen <b>bütün</b> şikâyet mesajlarını
+        <p>Ama ham posta kutusu, bilgisayara gelen <b>bütün</b> ICMP bildirimlerini
            alır. Aynı anda bir <code>ping</code> çalışıyorsa onunki de düşer.</p>
         <p style="margin-top:6px"><span class="pill p-red">Soru</span>
            Gelen mesajın bizim gönderdiğimiz pakete ait olduğunu nasıl ispatlarız?</p>
@@ -348,7 +548,7 @@
       <div class="card" style="background:var(--greenb); border-color:var(--green)">
         <p class="kicker" style="color:var(--green)">Çözüm — kural kitabında yazıyor</p>
         <p>İnternet kuralları (RFC 792) şunu <b>zorunlu</b> tutuyor: bir durak
-           şikâyet ederken, şikâyete sebep olan paketin <b>başını da geri yollamak
+           hata bildirirken, hataya sebep olan paketin <b>başını da geri yollamak
            zorunda</b>.</p>
         <p>Yani mesajın içinde <b>bizim gönderdiğimiz paketin kopyası</b> var.
            Onun içindeki <b>kapı numarasına</b> bakıyoruz.</p>
@@ -358,14 +558,14 @@
     </div>
 
     <svg viewBox="0 0 1000 150" style="margin-top:10px" role="img" aria-label="Paket icerigi">
-      <text x="6" y="16" font-size="10.5" font-weight="700" fill="#16181d">Gelen şikâyet mesajının içi:</text>
+      <text x="6" y="16" font-size="10.5" font-weight="700" fill="#16181d">Gelen hata bildiriminin içi (ICMP paketi):</text>
 
       <rect x="6" y="28" width="230" height="52" fill="#f4f6f9" stroke="#9aa3b2"/>
       <text x="121" y="50" font-size="10" font-weight="700" text-anchor="middle" fill="#16181d">zarf</text>
       <text x="121" y="67" font-size="8.5" text-anchor="middle" fill="#5b6270">kim yolladı = durağın adresi</text>
 
       <rect x="236" y="28" width="150" height="52" fill="#e3edf8" stroke="#2563a8"/>
-      <text x="311" y="50" font-size="10" font-weight="700" text-anchor="middle" fill="#16181d">şikâyet türü</text>
+      <text x="311" y="50" font-size="10" font-weight="700" text-anchor="middle" fill="#16181d">bildirim türü</text>
       <text x="311" y="67" font-size="8.5" text-anchor="middle" fill="#5b6270">&#8220;bilet bitti&#8221; / &#8220;kapı yok&#8221;</text>
 
       <rect x="386" y="28" width="210" height="52" fill="#f4f6f9" stroke="#9aa3b2"/>
@@ -405,11 +605,97 @@
   </div>
 </section>
 
+<!-- ======================================================= ÇIKTI OKUMA ==== -->
+<section>
+  <div class="head">
+    <h1>Çıktıyı okumak &#8212; yıldızlar ve &#8220;özel&#8221; adresler</h1>
+    <div class="meta">Ecole 42 · Süreç anlatımı · 6 / 9</div>
+  </div>
+  <p class="lede">
+    Gerçek bir koşuda en çok kafa karıştıran iki şey: <code>* * *</code> satırları
+    ve listede beliren <b>10.x</b> gibi &#8220;internette olmaması gereken&#8221; adresler.
+  </p>
+
+  <div class="body compact">
+    <div class="cols c21">
+      <div>
+        <p class="kicker">42 okulundan alınmış gerçek bir koşu</p>
+        <pre style="font-size:8.6pt; line-height:1.45"> 1  10.19.254.254    3.001 ms   2.908 ms   3.152 ms
+ 2  10.60.1.1        2.868 ms   4.173 ms   3.825 ms
+ 3  176.88.10.17     5.754 ms   4.104 ms   7.700 ms
+ 4  10.59.174.17     4.366 ms   3.406 ms   8.718 ms
+ 5  10.40.178.209    7.491 ms   5.407 ms   4.986 ms
+ 6  <i>* * *</i>
+ 7  10.38.210.62     4.890 ms   <i>*</i>         <i>*</i>
+ 8  10.38.211.242    7.336 ms   5.036 ms   5.439 ms
+ 9  <i>* * *</i>
+10  10.40.184.230    7.760 ms   5.500 ms   4.239 ms
+11  <i>* *</i>  209.85.175.22  13.725 ms
+12  192.178.202.113  87.747 ms  55.080 ms  56.273 ms</pre>
+
+        <div class="card" style="margin-top:10px">
+          <p class="kicker">Bölge bölge okunuşu</p>
+          <table style="font-size:10.4pt">
+            <tr><td style="white-space:nowrap"><b>1&#8211;2</b></td><td><code>10.19</code>, <code>10.60</code> &#8212; <b>okulun kendi ağı</b>: kampüs çıkışı ve omurgası</td></tr>
+            <tr><td style="white-space:nowrap"><b>3</b></td><td><code>176.88</code> &#8212; <b>public</b>: operatöre çıkış noktası</td></tr>
+            <tr><td style="white-space:nowrap"><b>4&#8211;10</b></td><td><code>10.59</code>, <code>10.40</code>, <code>10.38</code> &#8212; <b>operatörün kendi omurgası</b></td></tr>
+            <tr><td style="white-space:nowrap"><b>11&#8211;12</b></td><td><code>209.85</code>, <code>192.178</code> &#8212; <b>public</b>: hedefin ağı</td></tr>
+          </table>
+        </div>
+
+        <div class="card tint" style="margin-top:10px">
+          <p class="kicker">Özel (private) adres aralıkları &#8212; RFC 1918</p>
+          <p><code>10.0.0.0/8</code> &#183; <code>172.16.0.0/12</code> &#183;
+             <code>192.168.0.0/16</code></p>
+          <p style="margin-top:5px">Bu üç blok internette yönlendirilmez; herkes
+             kendi iç ağında kullanabilir. Evindeki modem de sana bunlardan birini verir.
+             Operatörler de omurgalarında aynı blokları kullanıyor &#8212; yukarıdaki
+             <code>10.x</code> satırlarının sebebi bu.</p>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="background:var(--greenb); border-color:var(--green)">
+          <p class="kicker" style="color:var(--green)">&#8220;Private IP üzerinden nasıl atlıyoruz?&#8221;</p>
+          <p>Atlamıyoruz. <b>Traceroute sana yolu değil, her durağın kendi arayüz
+             adresini gösterir.</b></p>
+          <p style="margin-top:6px">Bir router paketini gayet normal iletir; ama sana
+             bildirimi yollarken <b>kendi arayüzünün</b> adresini kaynak yazar. O arayüzün
+             adresi de <code>10.x</code> olabilir.</p>
+          <p style="margin-top:5px">O anda zaten operatörün ağının <b>içindesin</b>.
+             <code>10.x</code> internette yönlendirilemez ama operatörün kendi ağında geçerlidir.
+             Evden aynı adrese <code>ping</code> atsan cevap alamazsın.</p>
+        </div>
+
+        <div class="card" style="margin-top:10px">
+          <p class="kicker">Operatör neden özel adres kullanır</p>
+          <table style="font-size:10.4pt">
+            <tr><td style="white-space:nowrap"><b>Tasarruf</b></td><td>Omurgada binlerce router arayüzü var; IPv4 adresleri bitti ve pahalı.</td></tr>
+            <tr><td style="white-space:nowrap"><b>Güvenlik</b></td><td><code>10.x</code> adresli bir routera internetten erişilemez. Saldırı yüzeyi kapalı.</td></tr>
+            <tr><td style="white-space:nowrap"><b>Gerek yok</b></td><td>O router&#8217;ın işi paket iletmek; dışarıdan erişilebilir olması gerekmiyor.</td></tr>
+          </table>
+        </div>
+
+        <div class="card" style="margin-top:10px; background:var(--redb); border-color:var(--red)">
+          <p class="kicker" style="color:var(--red)">Kolay karışan iki şey</p>
+          <p><b><code>192.178.202.113</code> özel değil.</b> Özel aralık
+             <code>192.168.x.x</code>&#8217;tir. <code>192.178</code> public bir bloktur &#8212;
+             rakamlar benziyor, karıştırmak kolay.</p>
+          <p style="margin-top:5px"><b><code>* * *</code> kayıp durak demek değil.</b>
+             Paket oradan geçti; o router bildirim üretmeyi kapatmış ya da hız sınırı
+             uyguluyor. Kendini tanıtmadı, o kadar.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
 <!-- ======================================================= PAGE 4 ========= -->
 <section>
   <div class="head">
     <h1>Nasıl yazdık — önce test, sonra kod</h1>
-    <div class="meta">Ecole 42 · Süreç anlatımı · 4 / 6</div>
+    <div class="meta">Ecole 42 · Süreç anlatımı · 7 / 9</div>
   </div>
   <p class="lede">
     Kod yazmadan önce, &#8220;bunu doğru yaptım&#8221; diyebilmek için <b>önce testi</b>
@@ -501,7 +787,7 @@
 <section>
   <div class="head">
     <h1>14 Kasım — saat saat ne oldu</h1>
-    <div class="meta">Ecole 42 · Süreç anlatımı · 5 / 6</div>
+    <div class="meta">Ecole 42 · Süreç anlatımı · 8 / 9</div>
   </div>
   <p class="lede">
     Hedef: bir saatte bitirmek. Kodlama bir saatte bitti; kalan zaman doğrulama,
@@ -584,7 +870,7 @@
 <section>
   <div class="head">
     <h1>Yolda patlayan 6 şey — ve nasıl çözüldü</h1>
-    <div class="meta">Ecole 42 · Süreç anlatımı · 6 / 6</div>
+    <div class="meta">Ecole 42 · Süreç anlatımı · 9 / 9</div>
   </div>
   <p class="lede">
     Hiçbiri ilk denemede ortaya çıkmadı. Hepsi &#8220;başka bir yerde çalıştırınca&#8221;
