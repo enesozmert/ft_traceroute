@@ -503,3 +503,9 @@ komutu da `known_hosts`'a hiç yazmıyor.
 **Şifre yok, gerekmiyor da** — giriş SSH anahtarıyla, `sudo` parolasız.
 
 Diğer VM sorunları: [`vm/README.md`](vm/README.md)
+
+  ft_traceroute git:(main) ✗ sh '/home/eozmert/goinfre/ft_traceroute/vm/run-tests.sh' sync
+==> syncing /home/eozmert/goinfre/ft_traceroute -> VM:~/ft_traceroute
+hostname contains invalid characters
+rsync: connection unexpectedly closed (0 bytes received so far) [sender]
+rsync error: unexplained error (code 255) at io.c(232) [sender=3.2.7]
