@@ -504,8 +504,23 @@ komutu da `known_hosts`'a hiç yazmıyor.
 
 Diğer VM sorunları: [`vm/README.md`](vm/README.md)
 
-  ft_traceroute git:(main) ✗ sh '/home/eozmert/goinfre/ft_traceroute/vm/run-tests.sh' sync
+---
+
+## Sık karşılaşılan hata — rsync `hostname contains invalid characters`
+
+```
 ==> syncing /home/eozmert/goinfre/ft_traceroute -> VM:~/ft_traceroute
 hostname contains invalid characters
 rsync: connection unexpectedly closed (0 bytes received so far) [sender]
 rsync error: unexplained error (code 255) at io.c(232) [sender=3.2.7]
+```
+
+`vm/run-tests.sh` içindeki `-e` değeri satır devamıyla yazılmıştı; tırnak
+içinde kaldığı için bir sonraki satırın **sekmeleri** string'e giriyor ve
+rsync ssh'a bozuk argüman veriyordu. Düzeltildi — `git pull` yeterli.
+
+Aynı rapor ikinci bir sorunu da ortaya çıkardı: repo `goinfre/ft_traceroute`
+içine klonlanmışsa VM dizini **repoyla aynı yere** düşüyordu, yani 1,3 GB'lık
+`disk.vdi` git ağacının içinde kalıyordu. Artık VM dizini `-vm` ekiyle
+seçiliyor ve script, VM dizini repoya eşit ya da repo içindeyse çalışmayı
+reddediyor.
