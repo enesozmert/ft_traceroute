@@ -488,3 +488,6 @@ Offending ECDSA key in /home/eozmert/.ssh/known_hosts:5
   ssh-keygen -f "/home/eozmert/.ssh/known_hosts" -R "[127.0.0.1]:2222"
 Host key for [127.0.0.1]:2222 has changed and you have requested strict checking.
 Host key verification failed.
+
+ssh-keygen -f "/home/eozmert/.ssh/known_hosts" -R "[127.0.0.1]:2222"
+ssh -i /home/eozmert/goinfre/ft_traceroute/id_vm -p 2222 tester@127.0.0.1
