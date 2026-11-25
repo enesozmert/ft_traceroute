@@ -471,3 +471,20 @@ bu düzeltmelerin örnekleridir.
 **Yazar:** ozmerte (Ecole 42 — student)
 **Subject:** Ecole 42 — `ft_traceroute` v5.0
 **Bağımlılıklar:** yalnızca `libc`
+
+  ft_traceroute git:(main) ✗ ssh -i /home/eozmert/goinfre/ft_traceroute/id_vm -p 2222 tester@127.0.0.1
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+It is also possible that a host key has just been changed.
+The fingerprint for the ED25519 key sent by the remote host is
+SHA256:dzxvHL8rnxYfNT29hL4HV+eohcR2P+9SzGEEJDZ10B4.
+Please contact your system administrator.
+Add correct host key in /home/eozmert/.ssh/known_hosts to get rid of this message.
+Offending ECDSA key in /home/eozmert/.ssh/known_hosts:5
+  remove with:
+  ssh-keygen -f "/home/eozmert/.ssh/known_hosts" -R "[127.0.0.1]:2222"
+Host key for [127.0.0.1]:2222 has changed and you have requested strict checking.
+Host key verification failed.
