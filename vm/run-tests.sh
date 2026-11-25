@@ -32,6 +32,10 @@ rsync -a --delete \
 	"$REPO/" tester@127.0.0.1:~/ft_traceroute/
 
 echo "==> building and testing in the VM"
+# A previous `sudo make` leaves obj/ and output/ owned by root, and the next
+# ordinary `make fclean` then dies with "Permission denied". Take the tree back
+# before building; sudo is passwordless in this VM.
+$SSH 'sudo chown -R "$(id -un)":"$(id -gn)" ~/ft_traceroute 2>/dev/null; true'
 $SSH 'cd ~/ft_traceroute && make re >/dev/null && sudo TEST_TIMEOUT=90s sh test/run_tests.sh output/ft_traceroute'
 
 if [ "${1:-}" = "gates" ]; then

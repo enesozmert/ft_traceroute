@@ -69,6 +69,29 @@ Elle vermek için: `VM_DIR=/başka/yol sh vm/create-vm.sh`
 > goinfre düzenli olarak temizlenir. VM silinirse `sh vm/create-vm.sh` tekrar
 > kurar; repoda duran tek şey tarif olduğu için kayıp yok.
 
+## &#8220;REMOTE HOST IDENTIFICATION HAS CHANGED&#8221; alırsan
+
+```
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+```
+
+Saldırı değil. `127.0.0.1:2222` adresini daha önce **başka bir VM** kullanmış;
+onun host anahtarı `~/.ssh/known_hosts` içinde sabitlenmiş kalmış. Her yeni VM
+kendi anahtarını üretir, ssh de değişikliği görünce bağlantıyı reddeder.
+
+```bash
+ssh-keygen -R "[127.0.0.1]:2222"     # eski kaydı sil, sonra tekrar bağlan
+```
+
+`create-vm.sh` bunu artık **kendisi yapıyor**: VM'i başlatmadan önce o porta ait
+eski kaydı siliyor, `destroy` da silerken temizliyor. Script'in verdiği bağlantı
+komutu da `known_hosts`'a hiç yazmıyor.
+
+Şifre yok, gerekmiyor de &#8212; giriş SSH anahtarıyla. `tester` kullanıcısının
+parolası kilitli değil ama ayarlanmamıştır; `sudo` parolasız.
+
 ## TLS hatası alırsan
 
 42 makinelerinde sık görülür:

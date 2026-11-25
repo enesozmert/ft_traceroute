@@ -51,6 +51,12 @@ destroy()
 	"$VBM" controlvm "$VM_NAME" poweroff >/dev/null 2>&1 || true
 	"$VBM" unregistervm "$VM_NAME" --delete >/dev/null 2>&1 || true
 	rm -rf "$VM_DIR/vbox" "$VM_DIR/disk.vdi" "$VM_DIR/seed.iso" "$VM_DIR/seed"
+	# The next VM on this port will have a different host key.
+	if [ -f "$HOME/.ssh/known_hosts" ]; then
+		ssh-keygen -q -f "$HOME/.ssh/known_hosts" -R "[127.0.0.1]:$SSH_PORT" \
+			>/dev/null 2>&1 || true
+		rm -f "$HOME/.ssh/known_hosts.old"
+	fi
 	echo "VM '$VM_NAME' removed."
 }
 
@@ -204,17 +210,37 @@ if ! "$VBM" showvminfo "$VM_NAME" >/dev/null 2>&1; then
 		--type dvddrive --medium "$VM_DIR/seed.iso"
 fi
 
+# 127.0.0.1:<port> is reused by every VM that ever forwarded that port, so a
+# previous VM's host key may still be pinned in known_hosts. ssh then refuses
+# to connect with "REMOTE HOST IDENTIFICATION HAS CHANGED". That is a stale
+# cache entry, not an attack, so drop it for this port before connecting.
+if [ -f "$HOME/.ssh/known_hosts" ]; then
+	ssh-keygen -q -f "$HOME/.ssh/known_hosts" -R "[127.0.0.1]:$SSH_PORT" \
+		>/dev/null 2>&1 || true
+	rm -f "$HOME/.ssh/known_hosts.old"
+fi
+
 # Already running (re-run of this script, or started by hand) is not an error.
 if "$VBM" list runningvms | grep -q "\"$VM_NAME\""; then
 	echo "==> $VM_NAME is already running"
 else
 	echo "==> starting headless"
-	"$VBM" startvm "$VM_NAME" --type headless >/dev/null
+	if ! "$VBM" startvm "$VM_NAME" --type headless >/dev/null 2>&1; then
+		# A saved state written before the VM settings changed cannot be
+		# restored: "Failed to load unit ... VERR_SSM_LOAD_CONFIG_MISMATCH".
+		# The disk is untouched, so throwing the saved state away costs
+		# nothing but an ordinary boot.
+		echo "    saved state does not match the current config, discarding it"
+		"$VBM" discardstate "$VM_NAME" >/dev/null 2>&1 || true
+		"$VBM" startvm "$VM_NAME" --type headless >/dev/null
+	fi
 fi
 
 # ---------------------------------------------------------------------------
 # 5. wait for ssh
 # ---------------------------------------------------------------------------
+
+
 echo "==> waiting for ssh on port $SSH_PORT"
 i=0
 while [ "$i" -lt 60 ]; do
@@ -244,7 +270,13 @@ cat <<BANNER
   Private key    $VM_DIR/id_vm
 
  CONNECT
-  ssh -i $VM_DIR/id_vm -p $SSH_PORT tester@127.0.0.1
+  ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \\
+      -o LogLevel=ERROR -i $VM_DIR/id_vm -p $SSH_PORT tester@127.0.0.1
+
+  (those two options keep 127.0.0.1:$SSH_PORT out of known_hosts; without them
+   the next VM on this port is rejected with HOST IDENTIFICATION HAS CHANGED.
+   If you already hit that:
+       ssh-keygen -R "[127.0.0.1]:$SSH_PORT")
 
  CONNECT WITHOUT THE FLAGS -- append this to ~/.ssh/config once, then 'ssh $VM_NAME':
 
