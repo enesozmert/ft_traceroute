@@ -17,19 +17,27 @@ VM_DIR="${VM_DIR:-$(vm_default_dir)}"
 SSH_PORT="${SSH_PORT:-2222}"
 REPO="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 
+vm_guard_dir "$VM_DIR" "$REPO" || exit 1
+
 [ -f "$VM_DIR/id_vm" ] || {
 	echo "no VM key at $VM_DIR/id_vm -- run 'sh vm/create-vm.sh' first" >&2
 	exit 1
 }
 
-SSH="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-	-o LogLevel=ERROR -i $VM_DIR/id_vm -p $SSH_PORT tester@127.0.0.1"
+# Built on one line on purpose. A backslash continuation inside double quotes
+# keeps the next line's leading tabs in the string, and rsync -e then hands ssh
+# a mangled argument: "hostname contains invalid characters".
+SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -i $VM_DIR/id_vm -p $SSH_PORT"
+SSH="ssh $SSH_OPTS tester@127.0.0.1"
 
 echo "==> syncing $REPO -> VM:~/ft_traceroute"
+# The VM's own files may sit next to the project; never ship a 1.3 GB disk
+# image into the guest.
 rsync -a --delete \
 	--exclude obj --exclude output --exclude build --exclude .git \
-	-e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-		-o LogLevel=ERROR -i $VM_DIR/id_vm -p $SSH_PORT" \
+	--exclude 'disk.vdi' --exclude 'seed.iso' --exclude 'seed/' \
+	--exclude '*.qcow2' --exclude 'vbox/' --exclude 'id_vm' --exclude 'id_vm.pub' \
+	-e "ssh $SSH_OPTS" \
 	"$REPO/" tester@127.0.0.1:~/ft_traceroute/
 
 if [ "${1:-}" = "sync" ]; then

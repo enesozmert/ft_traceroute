@@ -42,3 +42,12 @@ __pycache__/
 
 # Project-specific
 opt/*.txt
+
+# VM artefaktları — normalde repo dışında durur, yanlışlıkla içeri düşerse
+disk.vdi
+seed.iso
+seed/
+vbox/
+*.qcow2
+id_vm
+id_vm.pub

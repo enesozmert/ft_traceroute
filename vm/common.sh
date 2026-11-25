@@ -17,11 +17,39 @@ vm_default_dir()
 	for _d in "$HOME/goinfre" "/goinfre/$_user" \
 		"$HOME/sgoinfre" "/sgoinfre/$_user"; do
 		if [ -d "$_d" ] && [ -w "$_d" ]; then
-			echo "$_d/ft_traceroute"
+			# "-vm" so the path can never land on the checkout itself: cloning
+			# into goinfre/ft_traceroute would otherwise drop a 1.3 GB disk
+			# image inside the git tree, and the sync would try to ship it.
+			echo "$_d/ft_traceroute-vm"
 			return 0
 		fi
 	done
 	echo "$HOME/vm/ft_traceroute"
+}
+
+# ---------------------------------------------------------------------------
+# vm_guard_dir <vm_dir> <repo_dir>
+#
+# Refuse to put the VM inside the checkout. The disk image alone is 1.3 GB and
+# would end up in git status, in the sync, and in any archive of the project.
+# ---------------------------------------------------------------------------
+vm_guard_dir()
+{
+	_vm=$1
+	_repo=$2
+	if [ "$_vm" = "$_repo" ]; then
+		echo "VM directory is the project itself: $_vm" >&2
+		echo "Pick another one, e.g. VM_DIR=$_vm-vm sh vm/create-vm.sh" >&2
+		return 1
+	fi
+	case "$_vm/" in
+		"$_repo"/*)
+			echo "VM directory is inside the project: $_vm" >&2
+			echo "Pick one outside it, e.g. VM_DIR=$_repo-vm" >&2
+			return 1
+			;;
+	esac
+	return 0
 }
 
 # ---------------------------------------------------------------------------

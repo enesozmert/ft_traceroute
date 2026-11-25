@@ -61,12 +61,17 @@ Disk ~1,3 GB + image ~400 MB. Bir 42 makinesinde ev dizini kotası bunu
 kaldırmaz, bu yüzden script **goinfre varsa oraya** kurar:
 
 ```
-1. $HOME/goinfre/ft_traceroute      <- 42 makinelerinde bu seçilir
-2. /goinfre/$USER/ft_traceroute
-3. $HOME/sgoinfre/ft_traceroute
-4. /sgoinfre/$USER/ft_traceroute
-5. $HOME/vm/ft_traceroute           <- goinfre yoksa
+1. $HOME/goinfre/ft_traceroute-vm      <- 42 makinelerinde bu seçilir
+2. /goinfre/$USER/ft_traceroute-vm
+3. $HOME/sgoinfre/ft_traceroute-vm
+4. /sgoinfre/$USER/ft_traceroute-vm
+5. $HOME/vm/ft_traceroute              <- goinfre yoksa
 ```
+
+Sondaki `-vm` kasıtlı: repoyu `goinfre/ft_traceroute` içine klonlarsan VM
+dizini **repoyla aynı yere** düşerdi ve 1,3 GB'lık `disk.vdi` git ağacının
+içinde kalırdı. Script bunu ayrıca kontrol ediyor: VM dizini repoya eşit ya da
+repo içindeyse çalışmayı reddediyor.
 
 Script başlarken hangisini seçtiğini basar ve 2,5 GB'tan az boş yer varsa uyarır.
 Elle vermek için: `VM_DIR=/başka/yol sh vm/create-vm.sh`

@@ -72,6 +72,9 @@ for t in "$VBM" qemu-img curl ssh-keygen; do
 	command -v "$t" >/dev/null 2>&1 || { echo "missing: $t" >&2; exit 1; }
 done
 
+REPO_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
+vm_guard_dir "$VM_DIR" "$REPO_DIR" || exit 1
+
 mkdir -p "$VM_DIR"
 cd "$VM_DIR"
 
