@@ -34,6 +34,11 @@ sh vm/run-tests.sh gates    # + norminette / strict / valgrind / diff-ref
 Script tekrar çalıştırılabilir: VM kuruluysa yeniden kurmaz, kapalıysa
 başlatır, çalışıyorsa sadece bağlantı bilgisini basar.
 
+> **VM boş geliyor.** `create-vm.sh` yalnızca makineyi kurar; proje içeride
+> değildir ve paylaşılan klasör yoktur. İçeri almak için `sh vm/run-tests.sh sync`.
+> Dosyalar VM'de `~/ft_traceroute` altına gelir. Host'ta bir şey değiştirdikten
+> sonra tekrar `sync` demen gerekir.
+
 ## Günlük kullanım
 
 ```bash

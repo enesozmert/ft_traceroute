@@ -288,8 +288,9 @@ cat <<BANNER
       StrictHostKeyChecking no
       UserKnownHostsFile /dev/null
 
- RUN THE SUITE IN THE VM
-  sh vm/run-tests.sh           tests only
+ GET THE PROJECT INTO THE VM -- a fresh VM is empty, nothing is shared
+  sh vm/run-tests.sh sync      copy the tree to ~/ft_traceroute, run nothing
+  sh vm/run-tests.sh           copy it in and run the suite
   sh vm/run-tests.sh gates     plus norminette, strict build, valgrind, diff-ref
 
  MANAGE

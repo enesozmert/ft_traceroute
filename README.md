@@ -163,8 +163,10 @@ sh vm/create-vm.sh
 #      ssh -i ~/vm/ft_traceroute/id_vm -p 2222 tester@127.0.0.1
 #    altında ~/.ssh/config'e yapıştırılacak hazır blok da var
 
-# 4. testleri VM'de koş
-sh vm/run-tests.sh          # test suite        -> 50/50 bekleniyor
+# 4. projeyi VM'e kopyala ve testleri koş
+#    (yeni VM boştur, paylaşılan klasör yoktur)
+sh vm/run-tests.sh sync     # sadece kopyala -> VM'de ~/ft_traceroute
+sh vm/run-tests.sh          # kopyala + test suite   -> 50/50 bekleniyor
 sh vm/run-tests.sh gates    # + norminette / strict / valgrind / diff-ref
 ```
 

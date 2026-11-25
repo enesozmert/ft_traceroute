@@ -3,8 +3,9 @@
 # ft_traceroute — sync the working tree into the VM and run the full suite
 # there, as root, so nothing is skipped for want of CAP_NET_RAW.
 #
-#   sh vm/run-tests.sh            run the test suite
+#   sh vm/run-tests.sh            sync the tree into the VM and run the suite
 #   sh vm/run-tests.sh gates      also run norminette, strict build, valgrind
+#   sh vm/run-tests.sh sync       only copy the tree in, run nothing
 # =============================================================================
 
 set -eu
@@ -30,6 +31,14 @@ rsync -a --delete \
 	-e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
 		-o LogLevel=ERROR -i $VM_DIR/id_vm -p $SSH_PORT" \
 	"$REPO/" tester@127.0.0.1:~/ft_traceroute/
+
+if [ "${1:-}" = "sync" ]; then
+	echo "==> synced. The project is at ~/ft_traceroute inside the VM:"
+	echo "     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \\"
+	echo "         -o LogLevel=ERROR -i $VM_DIR/id_vm -p $SSH_PORT tester@127.0.0.1"
+	echo "     cd ~/ft_traceroute && make && sudo ./output/ft_traceroute 8.8.8.8"
+	exit 0
+fi
 
 echo "==> building and testing in the VM"
 # A previous `sudo make` leaves obj/ and output/ owned by root, and the next
