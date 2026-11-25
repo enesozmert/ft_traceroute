@@ -472,22 +472,32 @@ bu düzeltmelerin örnekleridir.
 **Subject:** Ecole 42 — `ft_traceroute` v5.0
 **Bağımlılıklar:** yalnızca `libc`
 
-  ft_traceroute git:(main) ✗ ssh -i /home/eozmert/goinfre/ft_traceroute/id_vm -p 2222 tester@127.0.0.1
+
+---
+
+## Sık karşılaşılan hata — "REMOTE HOST IDENTIFICATION HAS CHANGED"
+
+```
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
-Someone could be eavesdropping on you right now (man-in-the-middle attack)!
-It is also possible that a host key has just been changed.
-The fingerprint for the ED25519 key sent by the remote host is
-SHA256:dzxvHL8rnxYfNT29hL4HV+eohcR2P+9SzGEEJDZ10B4.
-Please contact your system administrator.
-Add correct host key in /home/eozmert/.ssh/known_hosts to get rid of this message.
-Offending ECDSA key in /home/eozmert/.ssh/known_hosts:5
-  remove with:
-  ssh-keygen -f "/home/eozmert/.ssh/known_hosts" -R "[127.0.0.1]:2222"
 Host key for [127.0.0.1]:2222 has changed and you have requested strict checking.
 Host key verification failed.
+```
 
-ssh-keygen -f "/home/eozmert/.ssh/known_hosts" -R "[127.0.0.1]:2222"
-ssh -i /home/eozmert/goinfre/ft_traceroute/id_vm -p 2222 tester@127.0.0.1
+**Saldırı değil.** `127.0.0.1:2222` adresini daha önce başka bir VM kullanmış;
+onun host anahtarı `~/.ssh/known_hosts` içinde sabit kalmış. Her yeni VM kendi
+anahtarını üretir, ssh de değişikliği görünce bağlantıyı reddeder.
+
+```bash
+ssh-keygen -f ~/.ssh/known_hosts -R "[127.0.0.1]:2222"
+ssh -i ~/goinfre/ft_traceroute/id_vm -p 2222 tester@127.0.0.1
+```
+
+`vm/create-vm.sh` bunu artık kendisi hallediyor: VM'i başlatmadan önce o porta
+ait eski kaydı siliyor, `destroy` da çıkarken temizliyor, verdiği bağlantı
+komutu da `known_hosts`'a hiç yazmıyor.
+
+**Şifre yok, gerekmiyor da** — giriş SSH anahtarıyla, `sudo` parolasız.
+
+Diğer VM sorunları: [`vm/README.md`](vm/README.md)
